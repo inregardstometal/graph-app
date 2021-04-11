@@ -116,8 +116,7 @@ export default class GraphLayout {
     private damping(): void {
         try {
             this._nodes.forEach(node => {
-                const drag = node.v.negate().scale(this.DEFAULT_DAMPING_COEFFICIENT);
-                node.v.add(drag);
+                node.v.scale(1 - this.DEFAULT_DAMPING_COEFFICIENT);
             });
         } catch (err) {
 
