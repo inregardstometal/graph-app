@@ -212,6 +212,23 @@ export default class GraphGen {
 
         return graph;
     }
+
+    public static debug(): Graph {
+        const graph = new Graph();
+        try {
+            const node1 = Graph.node('1', {x: 250, y: 250});
+            const node2 = Graph.node('2', {x: -250, y: -250});
+            graph.addNode(node1);
+            graph.addNode(node2);
+
+            const edge = Graph.edge('1_2', '1', '2');
+            graph.addEdge(edge);
+            
+        } catch (err) {
+            console.error(err);
+        }
+        return graph;
+    }
     
     private static getRandomInt(max: number): number {
         return Math.floor(Math.random() * max);

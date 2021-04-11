@@ -18,7 +18,6 @@ export default class Vec2D {
      */
     constructor(vec?: TupleVec2D) {
         if (vec) {
-            console.log(vec)
             this._x = vec[0];
             this._y = vec[1];
         } else {

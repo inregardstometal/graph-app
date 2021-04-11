@@ -14,6 +14,7 @@ interface FlatEdge {
 interface LayoutOptions {
     maxIterations?: number;
     springLength?: number;
+    springConstant?: number;
 }
 
 export default class GraphLayout {
@@ -22,27 +23,34 @@ export default class GraphLayout {
     private _edges = new Map<string, FlatEdge>();
     private _graph: Graph;
 
-    private readonly DEFAULT_MAX_ITERATIONS = 5;
-    private readonly DEFAULT_SPRING_LENGTH = 800;
+    private readonly DEFAULT_MAX_ITERATIONS = 15;
+    private readonly DEFAULT_SPRING_CONSTANT = 0.25;
+    private readonly DEFAULT_SPRING_LENGTH = 400;
+    private readonly DEFAULT_DAMPING_COEFFICIENT = 0.25;
 
     constructor(graph: Graph){
         this._graph = graph;
         this.initializeInteralGraph();
-        console.log(this._nodes);
     }
 
     public run(options?: LayoutOptions): Graph {
         const maxIterations = options?.maxIterations ?? this.DEFAULT_MAX_ITERATIONS;
         const springLength = options?.springLength ?? this.DEFAULT_SPRING_LENGTH;
+        const springConstant = options?.springConstant ?? this.DEFAULT_SPRING_CONSTANT;
 
-        // // Main physics loop
-        // for (let t=0; t<maxIterations; t++) {
-        //     // Compute updates to velocity
-        //     this.springForce(springLength);
+        // Main physics loop
+        for (let t=0; t<maxIterations; t++) {
 
-        //     // Propagate new velocities to position
-        //     this.updatePositions();
-        // }
+            // Compute updates to velocity
+            this.springForce(springLength, springConstant);
+            
+            this.damping();
+
+            // Propagate new velocities to position
+            this.updatePositions();
+
+        }
+        console.log(this._nodes);
 
         this.writeToGraph();
 
@@ -53,15 +61,10 @@ export default class GraphLayout {
         this._graph.forNodes(node => {
             const x = node.position?.x ?? Math.random() * this.DEFAULT_SPRING_LENGTH;
             const y = node.position?.y ?? Math.random() * this.DEFAULT_SPRING_LENGTH;
-            console.log([x, y]);
-            const pos = new Vec2D([x, y])
-            const zero = new Vec2D();
-            console.log(pos, zero);
             const payload = {
-                r: pos, 
-                v: zero
+                r: new Vec2D([x, y]), 
+                v: new Vec2D()
             }
-            console.log(payload);
             this._nodes.set(
                 node.data.id, 
                 payload
@@ -83,7 +86,7 @@ export default class GraphLayout {
      * Compute the force on each node due to its edges, and update the velocity appropriately
      * @param springLength the rest length of each spring
      */
-    private springForce(springLength: number): void {
+    private springForce(springLength: number, springConstant: number): void {
         try {
             this._edges.forEach((edge, key) => {
                 const source = this._nodes.get(edge.source);
@@ -93,16 +96,31 @@ export default class GraphLayout {
                     throw new Error(`couldn't compute spring forces: edge ${key} was missing a source or target`);
                 }
 
+                //Vector pointing from source to target
                 const displacement = Vec2D.displacement(source.r, target.r);
+                //Distance between source and target
                 const distance = displacement.norm();
-                const forceMagnitude = springLength - distance;
-                const forceVec = displacement.normalize().scale(forceMagnitude);
+                //Compare distance to ideal distance
+                const forceScale = springLength - distance;
+                //Compute force
+                const forceVec = displacement.normalize().scale(springConstant * forceScale);
                 
                 source.v.add(forceVec);
                 target.v.add(forceVec.negate());
             });
         } catch (err) {
             console.error(err);
+        }
+    }
+
+    private damping(): void {
+        try {
+            this._nodes.forEach(node => {
+                const drag = node.v.negate().scale(this.DEFAULT_DAMPING_COEFFICIENT);
+                node.v.add(drag);
+            });
+        } catch (err) {
+
         }
     }
 
