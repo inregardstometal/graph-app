@@ -67,7 +67,7 @@ const GraphVisualizer = ({}: Props) => {
 
     useEffect(() => {
         if (!cy && el) {
-            const layout = new GraphLayout(GraphGen.weakSparse(15));
+            const layout = new GraphLayout(GraphGen.weakSparse(4));
             const data = layout.run().serialize();
 
             setCy(cytoscape({

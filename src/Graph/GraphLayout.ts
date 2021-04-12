@@ -23,10 +23,12 @@ export default class GraphLayout {
     private _edges = new Map<string, FlatEdge>();
     private _graph: Graph;
 
-    private readonly DEFAULT_MAX_ITERATIONS = 15;
+    private readonly DEFAULT_MAX_ITERATIONS = 100;
     private readonly DEFAULT_SPRING_CONSTANT = 0.25;
-    private readonly DEFAULT_SPRING_LENGTH = 400;
+    private readonly DEFAULT_SPRING_LENGTH = 200;
     private readonly DEFAULT_DAMPING_COEFFICIENT = 0.25;
+    private readonly DEFAULT_CHARGE = 2000;
+    private readonly Coulomb = 5000000;
 
     constructor(graph: Graph){
         this._graph = graph;
@@ -44,6 +46,7 @@ export default class GraphLayout {
             // Compute updates to velocity
             this.springForce(springLength, springConstant);
             
+            // this.naiveElectricForce();
             this.damping();
 
             // Propagate new velocities to position
@@ -119,12 +122,33 @@ export default class GraphLayout {
                 node.v.scale(1 - this.DEFAULT_DAMPING_COEFFICIENT);
             });
         } catch (err) {
-
+            console.error(err);
         }
     }
 
     private naiveElectricForce(): void {
-        //TODO
+        try {
+            for(let [thisKey, thisNode] of this._nodes.entries()) {
+                for(let [otherKey, otherNode] of this._nodes.entries()) {
+                    if (thisKey === otherKey) {
+                        continue;
+                    }
+
+                    const displacement = Vec2D.displacement(thisNode.r, otherNode.r);
+                    const distance = displacement.norm();
+                    let forceVec: Vec2D;
+                    if (distance === 0) {
+                        forceVec = new Vec2D();
+                    } else {
+                        forceVec = displacement.normalize().scale(-this.Coulomb * 1/(distance * distance));
+                    }
+
+                    thisNode.v.add(forceVec);
+                }
+            }
+        } catch (err) {
+            console.error(err);
+        }
     }
 
     private Barnes_HutElectricForce(): void {
