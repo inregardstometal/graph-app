@@ -1,57 +1,74 @@
-import { Graph } from '../Graph';
+import Graph from './Graph';
 import Vec2D from '../Utils/Vec2D';
-
-interface FlatNode {
-    r: Vec2D;
-    v: Vec2D;
-}
-
-interface FlatEdge {
-    source: string;
-    target: string;
-}
-
-interface LayoutOptions {
-    maxIterations?: number;
-    springLength?: number;
-    springConstant?: number;
-}
-
 export default class GraphLayout {
 
     private _nodes = new Map<string, FlatNode>();
     private _edges = new Map<string, FlatEdge>();
     private _graph: Graph;
 
-    private readonly DEFAULT_MAX_ITERATIONS = 100;
-    private readonly DEFAULT_SPRING_CONSTANT = 0.25;
-    private readonly DEFAULT_SPRING_LENGTH = 200;
-    private readonly DEFAULT_DAMPING_COEFFICIENT = 0.25;
-    private readonly DEFAULT_CHARGE = 2000;
-    private readonly Coulomb = 5000000;
+    /* 
+        ITERATION
+    */
+    private static readonly MAX_ITER: number = 100;
+    private static readonly MIN_ITER: number = 3;
+
+    /* 
+        FORCES
+    */  
+    // Equilibrium distance between two nodes
+    private static readonly SPACING: number = 100;
+    // Relative strength parameter (r vs a)
+    private static readonly C: number = 0.75;
+    // "Ideal spring length"
+    private static readonly K: number = GraphLayout.SPACING / Math.cbrt(GraphLayout.C);
+    // Precompute for the sake of efficiency
+    private static readonly K_SQUARED: number = GraphLayout.K * GraphLayout.K;
+
+    /* 
+        COOLING
+    */
+    private static readonly INIT_COOLING_FACTOR: number = 0.85;
+    private static readonly MAX_COOLING_EPOCHS: number = 5;
+
+    /* 
+        STALENESS
+    */
+    private static readonly MAX_STALE_ITER: number = GraphLayout.MAX_COOLING_EPOCHS + 2;
+    private static readonly STALE_THRESHOLD: number = 0.02;
+
+    /* 
+        LIMITING
+    */
+    private static readonly MIN_DIST: number = GraphLayout.SPACING / 10;
+
+    private static readonly TRANSITION: number = 80;
+
+    // Graph Energy
+    private E = 0;
+    // Last run's energy
+    private E_0 = this.E;
+    // Position update scaling factor
+    private STEP_SIZE = GraphLayout.INIT_COOLING_FACTOR;
+    
 
     constructor(graph: Graph){
         this._graph = graph;
         this.initializeInteralGraph();
     }
 
-    public run(options?: LayoutOptions): Graph {
-        const maxIterations = options?.maxIterations ?? this.DEFAULT_MAX_ITERATIONS;
-        const springLength = options?.springLength ?? this.DEFAULT_SPRING_LENGTH;
-        const springConstant = options?.springConstant ?? this.DEFAULT_SPRING_CONSTANT;
-
+    public run(): Graph {
         // Main physics loop
-        for (let t=0; t<maxIterations; t++) {
+        for (let t = 0; t < GraphLayout.MAX_ITER; t++) {
+            if (this._nodes.size > GraphLayout.TRANSITION) {
+                this.computeAllBHForces();
+            } else {
+                this.computeAllFRGForces();
+            }
 
-            // Compute updates to velocity
-            this.springForce(springLength, springConstant);
-            
-            // this.naiveElectricForce();
-            this.damping();
-
-            // Propagate new velocities to position
+            if (this.shouldEndLayout()) {
+                break;
+            }
             this.updatePositions();
-
         }
         console.log(this._nodes);
 
@@ -61,98 +78,27 @@ export default class GraphLayout {
     }
 
     private initializeInteralGraph(): void {
-        this._graph.forNodes(node => {
-            const x = node.position?.x ?? Math.random() * this.DEFAULT_SPRING_LENGTH;
-            const y = node.position?.y ?? Math.random() * this.DEFAULT_SPRING_LENGTH;
-            const payload = {
-                r: new Vec2D([x, y]), 
-                v: new Vec2D()
-            }
-            this._nodes.set(
-                node.data.id, 
-                payload
-            );
-
-            console.log(this._nodes.get(node.data.id));
-        });
-
-        this._graph.forEdges(edge => {
-            this._edges.set(edge.data.id, {source: edge.data.source, target: edge.data.target})
-        });
+        
     }
 
-    private centralizingForce(): void {
-        //TODO
+    private computeAllFRGForces(): void {
+
     }
 
-    /**
-     * Compute the force on each node due to its edges, and update the velocity appropriately
-     * @param springLength the rest length of each spring
-     */
-    private springForce(springLength: number, springConstant: number): void {
-        try {
-            this._edges.forEach((edge, key) => {
-                const source = this._nodes.get(edge.source);
-                const target = this._nodes.get(edge.target);
+    private computeAllBHForces(): void {
+        for(let node of this._nodes.values()) {
+            //Compute repulsive forces with quadtree
 
-                if (!source || !target) {
-                    throw new Error(`couldn't compute spring forces: edge ${key} was missing a source or target`);
-                }
-
-                //Vector pointing from source to target
-                const displacement = Vec2D.displacement(source.r, target.r);
-                //Distance between source and target
-                const distance = displacement.norm();
-                //Compare distance to ideal distance
-                const forceScale = springLength - distance;
-                //Compute force
-                const forceVec = displacement.normalize().scale(springConstant * forceScale);
-                
-                source.v.add(forceVec);
-                target.v.add(forceVec.negate());
-            });
-        } catch (err) {
-            console.error(err);
+            //Compute attractive forces
         }
     }
 
-    private damping(): void {
-        try {
-            this._nodes.forEach(node => {
-                node.v.scale(1 - this.DEFAULT_DAMPING_COEFFICIENT);
-            });
-        } catch (err) {
-            console.error(err);
-        }
+    private adaptiveCool(): void {
+
     }
 
-    private naiveElectricForce(): void {
-        try {
-            for(let [thisKey, thisNode] of this._nodes.entries()) {
-                for(let [otherKey, otherNode] of this._nodes.entries()) {
-                    if (thisKey === otherKey) {
-                        continue;
-                    }
-
-                    const displacement = Vec2D.displacement(thisNode.r, otherNode.r);
-                    const distance = displacement.norm();
-                    let forceVec: Vec2D;
-                    if (distance === 0) {
-                        forceVec = new Vec2D();
-                    } else {
-                        forceVec = displacement.normalize().scale(-this.Coulomb * 1/(distance * distance));
-                    }
-
-                    thisNode.v.add(forceVec);
-                }
-            }
-        } catch (err) {
-            console.error(err);
-        }
-    }
-
-    private Barnes_HutElectricForce(): void {
-        //TODO
+    private shouldEndLayout(): boolean {
+        // TODO
     }
 
     /**
