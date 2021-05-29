@@ -52,7 +52,7 @@ const stylesheet: cytoscape.Stylesheet[] = [
           'line-color': '#ccc',
           'target-arrow-color': '#ccc',
           'target-arrow-shape': 'triangle',
-          'curve-style': 'bezier'
+          'curve-style': 'haystack'
         }
       }
 ]
@@ -67,7 +67,7 @@ const GraphVisualizer = ({}: Props) => {
 
     useEffect(() => {
         if (!cy && el) {
-            const layout = new GraphLayout(GraphGen.weakSparse(250));
+            const layout = new GraphLayout(GraphGen.weakSparse(40));
             const data = layout.adaptiveForceDirected().serialize();
 
             console.log(data);
