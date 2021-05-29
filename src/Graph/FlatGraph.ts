@@ -23,7 +23,7 @@ export class FlatEdge {
     }
 }
 
-export default class UndirectedTopologyGraph {
+export default class FlatGraph {
     // Stores node information
     private nodeMap: Map<FlatNode['id'], FlatNode> = new Map<FlatNode['id'], FlatNode>();
     // Stores edge information in a way that preserves direction (for reconstruction only)
@@ -36,7 +36,7 @@ export default class UndirectedTopologyGraph {
         this.buildEdgeMap(graph);
         this.buildAdjacencyMap(graph);
     }
-    
+
     private buildNodeMap(graph: Graph): void {
         for(let node of graph.nodes) {
             this.nodeMap.set(node.data.id, new FlatNode(node.data.id));

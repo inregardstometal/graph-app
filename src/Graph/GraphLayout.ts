@@ -1,10 +1,9 @@
 import Graph from './Graph';
 import Vec2D from '../Utils/Vec2D';
+import FlatGraph from './FlatGraph';
 export default class GraphLayout {
 
-    private _nodes = new Map<string, FlatNode>();
-    private _edges = new Map<string, FlatEdge>();
-    private _graph: Graph;
+    private graph: FlatGraph;
 
     /* 
         ITERATION
@@ -52,8 +51,7 @@ export default class GraphLayout {
     
 
     constructor(graph: Graph){
-        this._graph = graph;
-        this.initializeInteralGraph();
+        this.graph = new FlatGraph(graph);
     }
 
     public run(): Graph {
@@ -70,15 +68,8 @@ export default class GraphLayout {
             }
             this.updatePositions();
         }
-        console.log(this._nodes);
 
-        this.writeToGraph();
-
-        return this._graph;
-    }
-
-    private initializeInteralGraph(): void {
-        
+        return this.graph.mapToGraph();
     }
 
     private computeAllFRGForces(): void {
@@ -113,24 +104,4 @@ export default class GraphLayout {
             console.error(err);
         }
     }
-
-    private writeToGraph(): void {
-        try {
-            this._graph.forNodes(node => {
-                const ref = this._nodes.get(node.data.id);
-
-                if (!ref) {
-                    throw new Error(`Couldn't write new positions to graph because node ${node.data.id} was ill defined`);
-                }
-
-                const positions = {x: ref.r.x, y: ref.r.y}
-                node.position = positions;
-            })
-        } catch (err) {
-
-        }
-    }
-
-    
-
 }
