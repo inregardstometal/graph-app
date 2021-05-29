@@ -1,6 +1,7 @@
 import Graph from './Graph';
 import Vec2D from '../Utils/Vec2D';
 import FlatGraph, { FlatNode, FlatEdge } from './FlatGraph';
+import { time } from 'node:console';
 export default class GraphLayout {
 
     private graph: FlatGraph;
@@ -17,7 +18,7 @@ export default class GraphLayout {
     // Equilibrium distance between two nodes
     private static readonly SPACING: number = 100;
     // Relative strength parameter (r vs a)
-    private static readonly C: number = 0.75;
+    private static readonly C: number = 1;
     // "Ideal spring length"
     private static readonly K: number = GraphLayout.SPACING / Math.cbrt(GraphLayout.C);
     // Precompute for the sake of efficiency
@@ -44,7 +45,7 @@ export default class GraphLayout {
     /* 
         BARNES-HUT    
     */
-    private static readonly TRANSITION: number = 80;
+    private static readonly TRANSITION: number = Number.MAX_VALUE;
     private static readonly THETA: 1.4;
 
     // Graph Energy
@@ -62,6 +63,8 @@ export default class GraphLayout {
     }
 
     public adaptiveForceDirected(): Graph {
+        const start = Date.now();
+
         // Main physics loop
         this.initGrid();
 
@@ -72,12 +75,15 @@ export default class GraphLayout {
                 this.computeAllFRGForces();
             }
             this.adaptiveCool();
-            this.logEnergy(t);
+            // this.logEnergy(t);
             if (this.shouldEndLayout(t)) {
                 break;
             }
+            this.updateEnergy();
             this.updatePositions();
         }
+
+        console.log("took " + (Date.now() - start) + " ms to run on graph of size " + this.graph.nodeMap.size);
 
         return this.graph.mapToGraph();
     }
@@ -101,7 +107,7 @@ export default class GraphLayout {
     }
 
     public grid(): Graph {
-        // TODO
+        this.initGrid();
         return this.graph.mapToGraph();
     }
 
@@ -215,7 +221,7 @@ export default class GraphLayout {
      * Determine whether the layout has finished
      */
     private shouldEndLayout(iter: number): boolean {
-        if (iter < GraphLayout.MIN_ITER) {
+        if (iter < GraphLayout.MIN_ITER || this.E === 0 || this.E_0 === 0) {
             return false;
         }
 

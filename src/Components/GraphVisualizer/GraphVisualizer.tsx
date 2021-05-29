@@ -67,7 +67,7 @@ const GraphVisualizer = ({}: Props) => {
 
     useEffect(() => {
         if (!cy && el) {
-            const layout = new GraphLayout(GraphGen.weakSparse(4));
+            const layout = new GraphLayout(GraphGen.weakSparse(250));
             const data = layout.adaptiveForceDirected().serialize();
 
             console.log(data);
