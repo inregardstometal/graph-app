@@ -35,7 +35,7 @@ export default class GraphLayout {
         STALENESS
     */
     private static readonly MAX_STALE_ITER: number = GraphLayout.MAX_COOLING_EXP + 2;
-    private static readonly STALE_THRESHOLD: number = 0.02;
+    private static readonly STALE_THRESHOLD: number = 0.01;
 
     /* 
         LIMITING

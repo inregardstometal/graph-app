@@ -43,9 +43,15 @@ const stylesheet: cytoscape.Stylesheet[] = [
           'background-color': '#ff04ea',
           'label': 'data(id)'
         }
-      },
-  
-      {
+    },
+    {
+        selector: 'node:selected',
+        style: {
+            'border-width': 5,
+            'border-color': 'cyan'
+        }
+    },
+    {
         selector: 'edge',
         style: {
           'width': 3,
