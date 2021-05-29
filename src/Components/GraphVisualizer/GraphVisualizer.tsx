@@ -68,7 +68,9 @@ const GraphVisualizer = ({}: Props) => {
     useEffect(() => {
         if (!cy && el) {
             const layout = new GraphLayout(GraphGen.weakSparse(4));
-            const data = layout.run().serialize();
+            const data = layout.adaptiveForceDirected().serialize();
+
+            console.log(data);
 
             setCy(cytoscape({
                 container: el,
@@ -79,7 +81,6 @@ const GraphVisualizer = ({}: Props) => {
         }
 
         if (cy) {
-            console.log(cy.json());
             cy.fit();
         }
     }, [cy, el])

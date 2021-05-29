@@ -1,6 +1,6 @@
 import Graph from './Graph';
 import Vec2D from '../Utils/Vec2D';
-import FlatGraph from './FlatGraph';
+import FlatGraph, { FlatNode, FlatEdge } from './FlatGraph';
 export default class GraphLayout {
 
     private graph: FlatGraph;
@@ -26,13 +26,14 @@ export default class GraphLayout {
     /* 
         COOLING
     */
+    private static readonly INIT_STEP_SIZE: number = 1;
     private static readonly INIT_COOLING_FACTOR: number = 0.85;
-    private static readonly MAX_COOLING_EPOCHS: number = 5;
+    private static readonly MAX_COOLING_EXP: number = 5;
 
     /* 
         STALENESS
     */
-    private static readonly MAX_STALE_ITER: number = GraphLayout.MAX_COOLING_EPOCHS + 2;
+    private static readonly MAX_STALE_ITER: number = GraphLayout.MAX_COOLING_EXP + 2;
     private static readonly STALE_THRESHOLD: number = 0.02;
 
     /* 
@@ -40,7 +41,11 @@ export default class GraphLayout {
     */
     private static readonly MIN_DIST: number = GraphLayout.SPACING / 10;
 
+    /* 
+        BARNES-HUT    
+    */
     private static readonly TRANSITION: number = 80;
+    private static readonly THETA: 1.4;
 
     // Graph Energy
     private E = 0;
@@ -48,22 +53,27 @@ export default class GraphLayout {
     private E_0 = this.E;
     // Position update scaling factor
     private STEP_SIZE = GraphLayout.INIT_COOLING_FACTOR;
+    private PROGRESS = 0;
+    private STALE = 0;
     
 
     constructor(graph: Graph){
         this.graph = new FlatGraph(graph);
     }
 
-    public run(): Graph {
+    public adaptiveForceDirected(): Graph {
         // Main physics loop
+        this.initGrid();
+
         for (let t = 0; t < GraphLayout.MAX_ITER; t++) {
-            if (this._nodes.size > GraphLayout.TRANSITION) {
+            if (this.graph.nodeMap.size > GraphLayout.TRANSITION) {
                 this.computeAllBHForces();
             } else {
                 this.computeAllFRGForces();
             }
-
-            if (this.shouldEndLayout()) {
+            this.adaptiveCool();
+            this.logEnergy(t);
+            if (this.shouldEndLayout(t)) {
                 break;
             }
             this.updatePositions();
@@ -72,36 +82,163 @@ export default class GraphLayout {
         return this.graph.mapToGraph();
     }
 
-    private computeAllFRGForces(): void {
-
-    }
-
-    private computeAllBHForces(): void {
-        for(let node of this._nodes.values()) {
-            //Compute repulsive forces with quadtree
-
-            //Compute attractive forces
+    private initGrid(): void {
+        const side = Math.ceil(Math.sqrt(this.graph.nodeMap.size));
+        let i = 0;
+        for(let node of this.graph.nodeMap.values()) {
+            const x = (i % side) * GraphLayout.SPACING;
+            const y = Math.floor(i / side) * GraphLayout.SPACING;
+            node.r = new Vec2D([x, y]);
+            i++;
         }
     }
 
-    private adaptiveCool(): void {
-
+    private initRandom(): void {
+        const size = Math.sqrt(this.graph.nodeMap.size);
+        for(let node of this.graph.nodeMap.values()) {
+            node.r = new Vec2D([Math.random() * GraphLayout.SPACING  * size, Math.random() * GraphLayout.SPACING * size]);
+        }
     }
 
-    private shouldEndLayout(): boolean {
+    public grid(): Graph {
         // TODO
+        return this.graph.mapToGraph();
+    }
+
+    private logEnergy(iter: number): void {
+        console.log("Energy on iteration " + iter + " was " + this.E);
+    }
+
+    /**
+     * Compute forces using Fruchterman-Reingold approach 
+     */
+    private computeAllFRGForces(): void {
+        for(let node of this.graph.nodeMap.values()) {
+            let force = this.computeFRGElectricForce(node);
+            force.add(this.computeSpringForce(node));
+            this.sumEnergy(force);
+            this.applyForce(node, force);
+        }
+    }   
+
+    /**
+     * Compute the FRG force on a single node
+     * @param node 
+     */
+    private computeFRGElectricForce(node: FlatNode): Vec2D {
+        let force = new Vec2D();
+        for(let body of this.graph.nodeMap.values()) {
+            if(node === body) {
+                continue;
+            }
+
+            const disp = Vec2D.displacement(node.r, body.r);
+            const len = disp.norm();
+            disp.normalize();
+            const scalar = ((GraphLayout.C * GraphLayout.K_SQUARED) / (len * len));
+            force.add(disp.scale(scalar));
+        }
+        return force;
+    }
+
+    /**
+     * Compute the spring force on a single node
+     * @param node 
+     */
+    private computeSpringForce(node: FlatNode): Vec2D {
+        const map = this.graph.adjacencyMap.get(node.id)!;
+        let force = new Vec2D();
+
+        if (!map) {
+            return force;
+        }
+
+        for(let nodeRef of map) {
+            const body = this.graph.nodeMap.get(nodeRef)!;
+
+            const disp = Vec2D.displacement(node.r, body.r);
+            const len = disp.norm();
+            disp.normalize();
+            const scalar = -len / GraphLayout.K;
+            force.add(disp.scale(scalar));
+        }
+        return force;
+    }
+
+    /**
+     * Compute forces using Barnes-Hut approach
+     */
+    private computeAllBHForces(): void {
+        // TODO
+    }
+
+    /**
+     * Sum in the energy contributed by a net force vector
+     * @param {Vec2D} force net force applied to a node
+     */
+    private sumEnergy(force: Vec2D): void {
+        const len = force.norm();
+        this.E += len * len;
+    }
+
+    private updateEnergy(): void {
+        this.E_0 = this.E;
+        this.E = 0;
+    }
+
+    /**
+     * Apply a given force to this node
+     * @param {FlatNode} node node to which force will be applied
+     * @param {Vec2D} force applied force
+     */
+    private applyForce(node: FlatNode, force: Vec2D): void {
+        node.v.add(force);
+    }
+
+    /**
+     * Adaptively change the step-size of the simulation
+     */
+    private adaptiveCool(): void {
+        if (this.E < this.E_0) {
+            this.PROGRESS++;
+            if (this.PROGRESS >= GraphLayout.MAX_COOLING_EXP) {
+                this.PROGRESS = 0;
+                this.STEP_SIZE = this.STEP_SIZE / GraphLayout.INIT_COOLING_FACTOR;
+            }
+        } else {
+            this.PROGRESS = 0;
+            this.STEP_SIZE = this.STEP_SIZE * GraphLayout.INIT_COOLING_FACTOR;
+        }
+    }
+
+    /**
+     * Determine whether the layout has finished
+     */
+    private shouldEndLayout(iter: number): boolean {
+        if (iter < GraphLayout.MIN_ITER) {
+            return false;
+        }
+
+        const delta = Math.abs((this.E - this.E_0) / (this.E_0));
+
+        if (delta < GraphLayout.STALE_THRESHOLD) {
+            this.STALE++;
+            if (this.STALE > GraphLayout.MAX_STALE_ITER) {
+                return true;
+            }
+        } else {
+            this.STALE = 0;
+        }
+
+        return false;
     }
 
     /**
      * Update the positions of all nodes but summing in their velocity
      */
     private updatePositions(): void {
-        try {
-            this._nodes.forEach((node, key) => {
-                node.r.add(node.v);
-            }); 
-        } catch (err) {
-            console.error(err);
+        for(let node of this.graph.nodeMap.values()) {
+            node.r.add(node.v.scale(this.STEP_SIZE));
         }
     }
 }

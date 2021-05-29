@@ -25,11 +25,11 @@ export class FlatEdge {
 
 export default class FlatGraph {
     // Stores node information
-    private nodeMap: Map<FlatNode['id'], FlatNode> = new Map<FlatNode['id'], FlatNode>();
+    public nodeMap: Map<FlatNode['id'], FlatNode> = new Map<FlatNode['id'], FlatNode>();
     // Stores edge information in a way that preserves direction (for reconstruction only)
-    private edgeMap: Map<FlatEdge['id'], FlatEdge> = new Map<FlatEdge['id'], FlatEdge>();
+    public edgeMap: Map<FlatEdge['id'], FlatEdge> = new Map<FlatEdge['id'], FlatEdge>();
     // Stores edge information in a way that is easy to iterate through when iterating through nodes
-    private adjacencyMap: Map<FlatNode['id'], FlatNode['id'][]> = new Map<FlatNode['id'], FlatNode['id'][]>();
+    public adjacencyMap: Map<FlatNode['id'], FlatNode['id'][]> = new Map<FlatNode['id'], FlatNode['id'][]>();
 
     constructor(graph: Graph) {
         this.buildNodeMap(graph);
