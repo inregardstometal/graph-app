@@ -34,8 +34,8 @@ export default class GraphLayout {
     /* 
         STALENESS
     */
-    private static readonly MAX_STALE_ITER: number = GraphLayout.MAX_COOLING_EXP + 5;
-    private static readonly STALE_THRESHOLD: number = 0.0001;
+    private static readonly MAX_STALE_ITER: number = GraphLayout.MAX_COOLING_EXP + 2;
+    private static readonly STALE_THRESHOLD: number = 0.02;
 
     /* 
         LIMITING
@@ -66,7 +66,7 @@ export default class GraphLayout {
         const start = Date.now();
 
         // Main physics loop
-        this.initRandom();
+        this.initGrid();
 
         for (let t = 0; t < GraphLayout.MAX_ITER; t++) {
             if (this.graph.nodeMap.size > GraphLayout.TRANSITION) {
