@@ -1,7 +1,6 @@
 import Graph from './Graph';
 import Vec2D from '../Utils/Vec2D';
 import FlatGraph, { FlatNode, FlatEdge } from './FlatGraph';
-import { time } from 'node:console';
 export default class GraphLayout {
 
     private graph: FlatGraph;
@@ -34,7 +33,7 @@ export default class GraphLayout {
     /* 
         STALENESS
     */
-    private static readonly MAX_STALE_ITER: number = GraphLayout.MAX_COOLING_EXP + 2;
+    private static readonly MAX_STALE_ITER: number = GraphLayout.MAX_COOLING_EXP + 5;
     private static readonly STALE_THRESHOLD: number = 0.02;
 
     /* 
@@ -53,7 +52,7 @@ export default class GraphLayout {
     // Last run's energy
     private E_0 = this.E;
     // Position update scaling factor
-    private STEP_SIZE = GraphLayout.INIT_COOLING_FACTOR;
+    private STEP_SIZE = GraphLayout.INIT_STEP_SIZE;
     private PROGRESS = 0;
     private STALE = 0;
     
@@ -75,7 +74,7 @@ export default class GraphLayout {
                 this.computeAllFRGForces();
             }
             this.adaptiveCool();
-            this.logEnergy(t);
+            // this.logEnergy(t);
             if (this.shouldEndLayout(t)) {
                 break;
             }
