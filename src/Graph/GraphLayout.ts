@@ -9,7 +9,7 @@ export default class GraphLayout {
     /* 
         ITERATION
     */
-    private static readonly MAX_ITER: number = 100;
+    private static readonly MAX_ITER: number = 1000;
     private static readonly MIN_ITER: number = 3;
 
     /* 
@@ -28,14 +28,14 @@ export default class GraphLayout {
         COOLING
     */
     private static readonly INIT_STEP_SIZE: number = 1;
-    private static readonly INIT_COOLING_FACTOR: number = 0.85;
+    private static readonly INIT_COOLING_FACTOR: number = 0.9;
     private static readonly MAX_COOLING_EXP: number = 5;
 
     /* 
         STALENESS
     */
-    private static readonly MAX_STALE_ITER: number = GraphLayout.MAX_COOLING_EXP + 2;
-    private static readonly STALE_THRESHOLD: number = 0.01;
+    private static readonly MAX_STALE_ITER: number = GraphLayout.MAX_COOLING_EXP + 5;
+    private static readonly STALE_THRESHOLD: number = 0.0001;
 
     /* 
         LIMITING
@@ -66,7 +66,7 @@ export default class GraphLayout {
         const start = Date.now();
 
         // Main physics loop
-        this.initGrid();
+        this.initRandom();
 
         for (let t = 0; t < GraphLayout.MAX_ITER; t++) {
             if (this.graph.nodeMap.size > GraphLayout.TRANSITION) {
@@ -75,7 +75,7 @@ export default class GraphLayout {
                 this.computeAllFRGForces();
             }
             this.adaptiveCool();
-            // this.logEnergy(t);
+            this.logEnergy(t);
             if (this.shouldEndLayout(t)) {
                 break;
             }
@@ -112,7 +112,11 @@ export default class GraphLayout {
     }
 
     private logEnergy(iter: number): void {
-        console.log("Energy on iteration " + iter + " was " + this.E);
+        console.log("\n Iteration " + iter);
+        console.log("Energy: " + this.E);
+        console.log("ΔE: " + (this.E - this.E_0));
+        console.log("Step Size: " + this.STEP_SIZE);
+        console.log("Is stale: " + (this.STALE !== 0) + "\n");
     }
 
     /**
@@ -139,7 +143,12 @@ export default class GraphLayout {
             }
 
             const disp = Vec2D.displacement(node.r, body.r);
-            const len = disp.norm();
+            let len = disp.norm();
+
+            if (len < GraphLayout.MIN_DIST) {
+                len = GraphLayout.MIN_DIST;
+            }
+
             disp.normalize();
             const scalar = ((GraphLayout.C * GraphLayout.K_SQUARED) / (len * len));
             force.add(disp.scale(scalar));
@@ -163,7 +172,12 @@ export default class GraphLayout {
             const body = this.graph.nodeMap.get(nodeRef)!;
 
             const disp = Vec2D.displacement(node.r, body.r);
-            const len = disp.norm();
+            let len = disp.norm();
+
+            if (len < GraphLayout.MIN_DIST) {
+                len = GraphLayout.MIN_DIST;
+            }
+
             disp.normalize();
             const scalar = -len / GraphLayout.K;
             force.add(disp.scale(scalar));
