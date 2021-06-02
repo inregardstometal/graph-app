@@ -80,7 +80,44 @@ export default class GraphGen {
         }
         return graph;
     }
-    
+
+    public static grid(width: number, height: number, options?: GenerationOptions): Graph {
+        const graph = new Graph();
+
+        const nodeName = (x: number, y: number) => `${x}_${y}`;
+        const edgeName = (n1: string, n2: string) => `${n1}_${n2}`;
+
+        try {
+            // Generate the columns
+            for (let i = 0; i < width; i++) {
+                for (let j = 0; j < height; j++) {
+                    // Construct a new node named after its starting position
+                    const name = nodeName(i, j);
+                    const node = Graph.node(name, {x: i, y: j});
+                    graph.addNode(node);
+                    
+                    // Check left and up for existing nodes to connect to
+                    const upNode = graph.hasNode(nodeName(i-1, j));
+                    if (typeof upNode === 'object') {
+                        const edge = Graph.edge(edgeName(node.data.id, upNode.data.id), node.data.id, upNode.data.id);
+                        graph.addEdge(edge);
+                    }
+                    const leftNode = graph.hasNode(nodeName(i, j-1));
+                    if (typeof leftNode === 'object') {
+                        const edge = Graph.edge(edgeName(node.data.id, leftNode.data.id), node.data.id, leftNode.data.id);
+                        graph.addEdge(edge);
+                    }
+                    console.log(`Added node`)
+                }
+            }
+        }
+        catch (err) {
+            console.error(err);
+        }
+
+        return graph;
+    }
+
     private static getRandomInt(max: number): number {
         return Math.floor(Math.random() * max);
     }
