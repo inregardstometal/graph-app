@@ -18,6 +18,28 @@ const Graph = styled.div`
     overflow: hidden;
 `;
 
+const ButtonRow = styled.div`
+    background: white;
+    width: 100%;
+    height: 50px;
+    border-radius: 10px;
+    border: 2px solid white;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+`;
+
+const HotBoibutton = styled.button`
+    padding: 12px;
+    background: white;
+    color: slategray;
+    font-weight: bolder;
+    border: none;
+    border-radius: 6px;
+    box-shadow: 0px 0px 5px 1px rgba(127,127,127,0.5);
+    margin: 0 10px;
+`;
+
 const gridLayout: cytoscape.LayoutOptions = {
     name: 'grid',
     avoidOverlapPadding: 10
@@ -74,6 +96,7 @@ const GraphVisualizer = ({}: Props) => {
     useEffect(() => {
         if (!cy && el) {
             const layout = new GraphLayout(GraphGen.grid(20, 20));
+            // const layout = new GraphLayout(GraphGen.dense(20));
             const data = layout.adaptiveForceDirected().serialize();
 
             console.log(data);
@@ -91,10 +114,19 @@ const GraphVisualizer = ({}: Props) => {
         }
     }, [cy, el])
 
+    const refreshClick = () => {
+        setCy(null);
+    }
+    
     return (
-        <Graph id='graph-target'>
+        <>
+            <ButtonRow onClick={refreshClick}>
+                <HotBoibutton>refresh</HotBoibutton>
+            </ButtonRow>
+            <Graph id='graph-target'>
 
-        </Graph>
+            </Graph>
+        </>
     )
 }
 
