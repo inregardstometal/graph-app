@@ -38,6 +38,7 @@ const HotBoibutton = styled.button`
     border-radius: 6px;
     box-shadow: 0px 0px 5px 1px rgba(127,127,127,0.5);
     margin: 0 10px;
+    cursor: pointer;
 `;
 
 const HotBoiInput = styled.input`
@@ -112,7 +113,7 @@ const GraphVisualizer = ({}: Props) => {
     const [el, setEl] = useState<HTMLElement | null>(null);
     const [numNodes, setNumNodes] = useState<number>(10);
     const [edgeLength, setEdgeLength] = useState<number>(1);
-    const [graphType, setGraphType] = useState<string | "weakSparse" | "dense" | "grid" | "dandeliohn">("weakSparse");
+    const [graphType, setGraphType] = useState<string>("weakSparse");
 
     useEffect(() => {
         setEl(document.getElementById('graph-target'));
@@ -133,6 +134,10 @@ const GraphVisualizer = ({}: Props) => {
             
                 case "dandelion":
                     graph = GraphGen.dandelion(numNodes, edgeLength);        
+                    break;    
+            
+                case "wagonWheel":
+                    graph = GraphGen.wagonWheel(numNodes, edgeLength);        
                     break;
 
                 case "grid":
@@ -197,16 +202,18 @@ const GraphVisualizer = ({}: Props) => {
         <>
             <ButtonRow>
                 <HotBoibutton onClick={refreshClick}>refresh</HotBoibutton>
-                <label htmlFor="numNodes"># nodes</label>
-                <HotBoiInput placeholder="# of nodes" type="number" value={numNodes} onChange={numNodesChange} title="Number of nodes in this graph" id="numNodes"/>
-                <label htmlFor="edgeLength">edge length</label>
-                <HotBoiInput placeholder="edge length" type="number" value={edgeLength} onChange={edgeLengthChange} title="Initial edge length of the graph" id="edgeLength"/>
-                <HotBoiSelect onChange={graphTypeChange}>
+                <label htmlFor="graphType">graph type</label>
+                <HotBoiSelect onChange={graphTypeChange} id="graphType">
                     <option value="weakSparse">weakSparse</option>
                     <option value="dense">dense</option>
                     <option value="grid">grid</option>
                     <option value="dandelion">dandelion</option>
+                    <option value="wagonWheel">wagonWheel</option>
                 </HotBoiSelect>
+                <label htmlFor="numNodes"># nodes</label>
+                <HotBoiInput placeholder="# of nodes" type="number" value={numNodes} onChange={numNodesChange} title="Number of nodes in this graph" id="numNodes"/>
+                <label htmlFor="edgeLength">edge length</label>
+                <HotBoiInput placeholder="edge length" type="number" value={edgeLength} onChange={edgeLengthChange} title="Initial edge length of the graph" id="edgeLength"/>
             </ButtonRow>
             <Graph id='graph-target'>
 
