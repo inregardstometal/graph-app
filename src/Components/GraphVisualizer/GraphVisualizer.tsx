@@ -1,7 +1,7 @@
 import cytoscape from 'cytoscape';
 import styled from '@emotion/styled';
 import { usePrevious } from 'Utils';
-import { useEffect, useState } from 'react'; 
+import { ChangeEvent, useEffect, useState } from 'react'; 
 import GraphGen from 'Graph/GraphGen';
 import GraphLayout from 'Graph/GraphLayout';
 import Vec2D from 'Utils/Vec2D';
@@ -32,6 +32,28 @@ const ButtonRow = styled.div`
 const HotBoibutton = styled.button`
     padding: 12px;
     background: white;
+    color: slategray;
+    font-weight: bolder;
+    border: none;
+    border-radius: 6px;
+    box-shadow: 0px 0px 5px 1px rgba(127,127,127,0.5);
+    margin: 0 10px;
+`;
+
+const HotBoiInput = styled.input`
+    padding: 12px;
+    background: #F0F0F4;
+    color: slategray;
+    font-weight: bolder;
+    border: none;
+    border-radius: 6px;
+    box-shadow: 0px 0px 5px 1px rgba(127,127,127,0.5);
+    margin: 0 10px;
+`;
+
+const HotBoiSelect = styled.select`
+    padding: 12px;
+    background: #F0F0F4;
     color: slategray;
     font-weight: bolder;
     border: none;
@@ -88,6 +110,8 @@ const stylesheet: cytoscape.Stylesheet[] = [
 const GraphVisualizer = ({}: Props) => {
     const [cy, setCy] = useState<cytoscape.Core | null>(null);
     const [el, setEl] = useState<HTMLElement | null>(null);
+    const [edgeLength, setEdgeLength] = useState<number>(1);
+    const [graphType, setGraphType] = useState<string | "weakSparse" | "dense" | "grid" | "dandeliohn">("weakSparse");
 
     useEffect(() => {
         setEl(document.getElementById('graph-target'));
@@ -95,13 +119,32 @@ const GraphVisualizer = ({}: Props) => {
 
     useEffect(() => {
         if (!cy && el) {
-            const graph = GraphGen.dandelion(50, 500);
-            // const graph = GraphGen.grid(1, 20);
-            // const graph = GraphGen.dense(20);
+            let graph;
+
+            switch (graphType) {
+                case "weakSparse":
+                    graph = GraphGen.weakSparse(100);
+                    break;
+
+                case "dense":
+                    graph = GraphGen.dense(20);
+                    break;
+            
+                case "grid":
+                    graph = GraphGen.grid(10, 10);
+                    break;
+            
+                case "dandelion":
+                    graph = GraphGen.dandelion(50, edgeLength);        
+                    break;
+            
+                default:
+                    graph = GraphGen.grid(10, 10);
+                    break;
+            }
 
             const layout = new GraphLayout(graph);
 
-            // const data = graph.serialize();
             const data = layout.adaptiveForceDirected().serialize();
 
             console.log(data);
@@ -117,16 +160,39 @@ const GraphVisualizer = ({}: Props) => {
         if (cy) {
             cy.fit();
         }
-    }, [cy, el])
+    }, [cy, el, edgeLength, graphType]);
 
     const refreshClick = () => {
         setCy(null);
     }
-    
+
+    const edgeLengthChange = (event: ChangeEvent<HTMLInputElement>) => {
+        event.preventDefault();
+        const val = Number.parseInt(event.target.value);
+        if (val !== edgeLength) {
+            setEdgeLength(val);
+        }
+    }
+
+    const graphTypeChange = (event: ChangeEvent<HTMLSelectElement>) => {
+        event.preventDefault();
+        const val = event.target.value;
+        if (val !== graphType){
+            setGraphType(val);
+        }
+    }
+
     return (
         <>
             <ButtonRow onClick={refreshClick}>
                 <HotBoibutton>refresh</HotBoibutton>
+                <HotBoiInput placeholder="edge length" type="number" value={edgeLength} onChange={edgeLengthChange}/>
+                <HotBoiSelect onChange={graphTypeChange}>
+                    <option value="weakSparse">weakSparse</option>
+                    <option value="dense">dense</option>
+                    <option value="grid">grid</option>
+                    <option value="dandelion">dandelion</option>
+                </HotBoiSelect>
             </ButtonRow>
             <Graph id='graph-target'>
 
