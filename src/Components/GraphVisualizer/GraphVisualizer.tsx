@@ -110,6 +110,7 @@ const stylesheet: cytoscape.Stylesheet[] = [
 const GraphVisualizer = ({}: Props) => {
     const [cy, setCy] = useState<cytoscape.Core | null>(null);
     const [el, setEl] = useState<HTMLElement | null>(null);
+    const [numNodes, setNumNodes] = useState<number>(10);
     const [edgeLength, setEdgeLength] = useState<number>(1);
     const [graphType, setGraphType] = useState<string | "weakSparse" | "dense" | "grid" | "dandeliohn">("weakSparse");
 
@@ -123,23 +124,22 @@ const GraphVisualizer = ({}: Props) => {
 
             switch (graphType) {
                 case "weakSparse":
-                    graph = GraphGen.weakSparse(100);
+                    graph = GraphGen.weakSparse(numNodes);
                     break;
 
                 case "dense":
-                    graph = GraphGen.dense(20);
-                    break;
-            
-                case "grid":
-                    graph = GraphGen.grid(10, 10);
+                    graph = GraphGen.dense(numNodes);
                     break;
             
                 case "dandelion":
-                    graph = GraphGen.dandelion(50, edgeLength);        
+                    graph = GraphGen.dandelion(numNodes, edgeLength);        
                     break;
-            
+
+                case "grid":
                 default:
-                    graph = GraphGen.grid(10, 10);
+                    const width = Math.floor(Math.sqrt(numNodes));
+                    const height = numNodes - width;
+                    graph = GraphGen.grid(width, height);
                     break;
             }
 
@@ -160,10 +160,19 @@ const GraphVisualizer = ({}: Props) => {
         if (cy) {
             cy.fit();
         }
-    }, [cy, el, edgeLength, graphType]);
+    }, [cy, el, edgeLength, graphType, numNodes]);
 
     const refreshClick = () => {
         setCy(null);
+    }
+
+    const numNodesChange = (event: ChangeEvent<HTMLInputElement>) => {
+        event.preventDefault();
+        const val = Number.parseInt(event.target.value);
+        if (val !== numNodes) {
+            setNumNodes(val);
+            setCy(null);
+        }
     }
 
     const edgeLengthChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -171,6 +180,7 @@ const GraphVisualizer = ({}: Props) => {
         const val = Number.parseInt(event.target.value);
         if (val !== edgeLength) {
             setEdgeLength(val);
+            setCy(null);
         }
     }
 
@@ -179,14 +189,18 @@ const GraphVisualizer = ({}: Props) => {
         const val = event.target.value;
         if (val !== graphType){
             setGraphType(val);
+            setCy(null);
         }
     }
 
     return (
         <>
-            <ButtonRow onClick={refreshClick}>
-                <HotBoibutton>refresh</HotBoibutton>
-                <HotBoiInput placeholder="edge length" type="number" value={edgeLength} onChange={edgeLengthChange}/>
+            <ButtonRow>
+                <HotBoibutton onClick={refreshClick}>refresh</HotBoibutton>
+                <label htmlFor="numNodes"># nodes</label>
+                <HotBoiInput placeholder="# of nodes" type="number" value={numNodes} onChange={numNodesChange} title="Number of nodes in this graph" id="numNodes"/>
+                <label htmlFor="edgeLength">edge length</label>
+                <HotBoiInput placeholder="edge length" type="number" value={edgeLength} onChange={edgeLengthChange} title="Initial edge length of the graph" id="edgeLength"/>
                 <HotBoiSelect onChange={graphTypeChange}>
                     <option value="weakSparse">weakSparse</option>
                     <option value="dense">dense</option>
