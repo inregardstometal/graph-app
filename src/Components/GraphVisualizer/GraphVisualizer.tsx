@@ -95,8 +95,13 @@ const GraphVisualizer = ({}: Props) => {
 
     useEffect(() => {
         if (!cy && el) {
-            const layout = new GraphLayout(GraphGen.grid(20, 20));
-            // const layout = new GraphLayout(GraphGen.dense(20));
+            const graph = GraphGen.dandelion(50, 500);
+            // const graph = GraphGen.grid(1, 20);
+            // const graph = GraphGen.dense(20);
+
+            const layout = new GraphLayout(graph);
+
+            // const data = graph.serialize();
             const data = layout.adaptiveForceDirected().serialize();
 
             console.log(data);
