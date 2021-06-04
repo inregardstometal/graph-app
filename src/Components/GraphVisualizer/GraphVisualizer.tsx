@@ -159,8 +159,7 @@ const GraphVisualizer = ({}: Props) => {
                 case "grid":
                 default:
                     const width = Math.floor(Math.sqrt(numNodes));
-                    const height = numNodes - width;
-                    graph = GraphGen.grid(width, height);
+                    graph = GraphGen.grid(width, width);
                     break;
             }
 
