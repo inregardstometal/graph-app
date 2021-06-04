@@ -1,7 +1,7 @@
 import cytoscape from 'cytoscape';
 import styled from '@emotion/styled';
 import { usePrevious } from 'Utils';
-import { ChangeEvent, useEffect, useState } from 'react'; 
+import { ChangeEvent, useEffect, useState, useRef } from 'react'; 
 import GraphGen from 'Graph/GraphGen';
 import GraphLayout from 'Graph/GraphLayout';
 import { SerialGraph } from 'Graph';
@@ -123,13 +123,18 @@ const GraphVisualizer = ({}: Props) => {
     const [edgeLength, setEdgeLength] = useState<number>(1);
     const [graphType, setGraphType] = useState<string>("weakSparse");
 
-    const[iter, setIter] = useState<number>(0);
+    const [int, setInt] = useState<number>(25);
+    const [iterCode, setIterCode] = useState<NodeJS.Timeout | null>(null);
 
     useEffect(() => {
         setEl(document.getElementById('graph-target'));
     }, []);
 
     useEffect(() => {
+        if (iterCode) {
+            clearTimeout(iterCode);
+        }
+
         if (!cy && el) {
             let graph;
 
@@ -235,6 +240,19 @@ const GraphVisualizer = ({}: Props) => {
         }
     }
 
+    const autoTick = () => {
+        setIterCode(setInterval(() => {
+            tick();
+        }, int));
+    }
+
+    const endTick = () => {
+        if (iterCode) {
+            clearTimeout(iterCode);
+            setIterCode(null);
+        }
+    }
+
     const modeChange = (event: ChangeEvent<HTMLSelectElement>) => {
         if (event.target.value !== mode) {
             setMode(event.target.value as Mode);
@@ -261,11 +279,20 @@ const GraphVisualizer = ({}: Props) => {
                     <option value="dandelion">dandelion</option>
                     <option value="wagonWheel">wagonWheel</option>
                 </HotBoiSelect>
+
+                {/* TICK */}
                 <HotBoiSelect onChange={modeChange} id="mode">
                     <option value={Mode.AFD}>{Mode.AFD}</option>
                     <option value={Mode.Tick}>{Mode.Tick}</option>
                 </HotBoiSelect>
-                <HotBoibutton onClick={tick} disabled={mode !== Mode.Tick}>tick</HotBoibutton>
+                {mode === Mode.Tick && 
+                    <>
+                        <HotBoibutton onClick={tick}>tick</HotBoibutton>
+                        {iterCode === null ? <HotBoibutton onClick={autoTick}>Auto Tick</HotBoibutton> : <HotBoibutton onClick={endTick}>Stop Ticking</HotBoibutton>}
+                    </>
+                }
+                <HotBoiInput type='number' placeholder='tick length' value={int} onChange={e => setInt(e.target.valueAsNumber)}/>
+                
                 <label htmlFor="numNodes"># nodes</label>
                 <HotBoiInput placeholder="# of nodes" type="number" value={numNodes} onChange={numNodesChange} title="Number of nodes in this graph" id="numNodes"/>
                 <label htmlFor="edgeLength">edge length</label>

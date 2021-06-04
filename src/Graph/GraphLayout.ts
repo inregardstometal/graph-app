@@ -9,7 +9,7 @@ export default class GraphLayout {
         ITERATION
     */
     private static readonly MAX_ITER: number = 1000;
-    private static readonly MIN_ITER: number = 3;
+    private static readonly MIN_ITER: number = 500;
 
     /* 
         FORCES
