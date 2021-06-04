@@ -124,7 +124,8 @@ const GraphVisualizer = ({}: Props) => {
     const [graphType, setGraphType] = useState<string>("weakSparse");
 
     const [int, setInt] = useState<number>(25);
-    const [iterCode, setIterCode] = useState<NodeJS.Timeout | null>(null);
+    const [interCode, setInterCode] = useState<NodeJS.Timeout | null>(null);
+    const iteration = useRef<number>(0);
 
     useEffect(() => {
         setEl(document.getElementById('graph-target'));
@@ -134,9 +135,10 @@ const GraphVisualizer = ({}: Props) => {
         if (!cy && el) {
             let graph;
 
-            if (iterCode) {
-                clearTimeout(iterCode);
-                setIterCode(null);
+            if (interCode) {
+                clearTimeout(interCode);
+                setInterCode(null);
+                iteration.current = 0;
             }
 
             switch (graphType) {
@@ -185,7 +187,7 @@ const GraphVisualizer = ({}: Props) => {
                 layout: presetLayout
             }));
         }
-    }, [cy, el, edgeLength, graphType, numNodes, iterCode]);
+    }, [cy, el, edgeLength, graphType, numNodes, interCode]);
 
 
 
@@ -233,19 +235,20 @@ const GraphVisualizer = ({}: Props) => {
                     return ele.position();
                 }
             });
+            iteration.current++;
         }
     }
 
     const autoTick = () => {
-        setIterCode(setInterval(() => {
+        setInterCode(setInterval(() => {
             tick();
         }, int));
     }
 
     const endTick = () => {
-        if (iterCode) {
-            clearTimeout(iterCode);
-            setIterCode(null);
+        if (interCode) {
+            clearTimeout(interCode);
+            setInterCode(null);
         }
     }
 
@@ -284,11 +287,11 @@ const GraphVisualizer = ({}: Props) => {
                 {mode === Mode.Tick && 
                     <>
                         <HotBoibutton onClick={tick}>tick</HotBoibutton>
-                        {iterCode === null ? <HotBoibutton onClick={autoTick}>Auto Tick</HotBoibutton> : <HotBoibutton onClick={endTick}>Stop Ticking</HotBoibutton>}
+                        {interCode === null ? <HotBoibutton onClick={autoTick}>Auto Tick</HotBoibutton> : <HotBoibutton onClick={endTick}>Stop Ticking</HotBoibutton>}
+                        <label>Tick: {iteration.current}</label>
                     </>
                 }
                 <HotBoiInput type='number' placeholder='tick length' value={int} onChange={e => setInt(e.target.valueAsNumber)}/>
-                
                 <label htmlFor="numNodes"># nodes</label>
                 <HotBoiInput placeholder="# of nodes" type="number" value={numNodes} onChange={numNodesChange} title="Number of nodes in this graph" id="numNodes"/>
                 <label htmlFor="edgeLength">edge length</label>
