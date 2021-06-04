@@ -185,10 +185,6 @@ const GraphVisualizer = ({}: Props) => {
                 layout: presetLayout
             }));
         }
-
-        if (cy) {
-            cy.fit();
-        }
     }, [cy, el, edgeLength, graphType, numNodes, iterCode]);
 
 
