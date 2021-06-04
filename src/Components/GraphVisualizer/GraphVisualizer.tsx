@@ -242,9 +242,16 @@ const GraphVisualizer = ({}: Props) => {
         }
     }
 
+    const fit = () => {
+        if (cy) {
+            cy.fit();
+        }
+    }
+
     return (
         <>
             <ButtonRow>
+                <HotBoibutton onClick={fit}>fit</HotBoibutton>
                 <HotBoibutton onClick={refreshClick}>refresh</HotBoibutton>
                 <label htmlFor="graphType">graph type</label>
                 <HotBoiSelect onChange={graphTypeChange} id="graphType">
