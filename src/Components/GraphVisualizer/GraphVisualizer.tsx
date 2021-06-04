@@ -131,12 +131,13 @@ const GraphVisualizer = ({}: Props) => {
     }, []);
 
     useEffect(() => {
-        if (iterCode) {
-            clearTimeout(iterCode);
-        }
-
         if (!cy && el) {
             let graph;
+
+            if (iterCode) {
+                clearTimeout(iterCode);
+                setIterCode(null);
+            }
 
             switch (graphType) {
                 case "weakSparse":
@@ -189,7 +190,7 @@ const GraphVisualizer = ({}: Props) => {
         if (cy) {
             cy.fit();
         }
-    }, [cy, el, edgeLength, graphType, numNodes]);
+    }, [cy, el, edgeLength, graphType, numNodes, iterCode]);
 
 
 
