@@ -116,6 +116,22 @@ export default class Graph {
     }
 
     /**
+     * Check if this graph contains a node by a given name.
+     * @param name The name identifier of the node
+     */
+    public hasNode(name: string): Node | boolean {
+        // Find the index of the node in question
+        const nodeIndex = this.nodes.findIndex(node => node.data.id === name);
+    
+        // If a node was found, return it.
+        if (nodeIndex >= 0) {
+            return this.nodes[nodeIndex];
+        }
+
+        return false;
+    }
+
+    /**
      * Static method for creating a new node
      * @param id the id of the new node
      * @param position optional position

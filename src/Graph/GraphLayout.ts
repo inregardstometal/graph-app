@@ -65,7 +65,8 @@ export default class GraphLayout {
         const start = Date.now();
 
         // Main physics loop
-        this.initGrid();
+        // this.initGrid();
+        this.initRandom();
 
         for (let t = 0; t < GraphLayout.MAX_ITER; t++) {
             if (this.graph.nodeMap.size > GraphLayout.TRANSITION) {

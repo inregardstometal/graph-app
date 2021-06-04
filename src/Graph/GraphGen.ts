@@ -80,7 +80,129 @@ export default class GraphGen {
         }
         return graph;
     }
-    
+
+    public static grid(width: number, height: number, options?: GenerationOptions): Graph {
+        const graph = new Graph();
+
+        const nodeName = (x: number, y: number) => `${x}_${y}`;
+        const edgeName = (n1: string, n2: string) => `${n1}_${n2}`;
+
+        try {
+            // Generate the columns
+            for (let i = 0; i < width; i++) {
+                for (let j = 0; j < height; j++) {
+                    // Construct a new node named after its starting position
+                    const name = nodeName(i, j);
+                    const node = Graph.node(name, {x: i, y: j});
+                    graph.addNode(node);
+                    
+                    // Check left and up for existing nodes to connect to
+                    const upNode = graph.hasNode(nodeName(i-1, j));
+                    if (typeof upNode === 'object') {
+                        const edge = Graph.edge(edgeName(node.data.id, upNode.data.id), node.data.id, upNode.data.id);
+                        graph.addEdge(edge);
+                    }
+                    const leftNode = graph.hasNode(nodeName(i, j-1));
+                    if (typeof leftNode === 'object') {
+                        const edge = Graph.edge(edgeName(node.data.id, leftNode.data.id), node.data.id, leftNode.data.id);
+                        graph.addEdge(edge);
+                    }
+                    console.log(`Added node`)
+                }
+            }
+        }
+        catch (err) {
+            console.error(err);
+        }
+
+        return graph;
+    }
+
+    public static dandelion(nodes: number, edgeLength: number): Graph {
+        const graph = new Graph();
+        
+        try {
+            const nodeName = (x: number, y: number) => `${x.toPrecision(2)}_${y.toPrecision(2)}`;
+            const edgeName = (n1: string, n2: string) => `${n1}_${n2}`;
+
+            // Add the center node
+            const centerNode = Graph.node(nodeName(0, 0));
+            graph.addNode(centerNode);
+
+            // We don't want to divide by zero later.
+            if (nodes === 1) {
+                return graph;
+            }
+
+            // Get the number of degrees between each of the petal nodes.
+            // This will be 360 degrees divided by the number of nodes-1.
+            const radsBetweenNodes = (2 * Math.PI) / (nodes - 1);
+            for (let i = 1; i <= nodes; i++) {
+                const x = edgeLength * Math.cos(radsBetweenNodes * i);
+                const y = edgeLength * Math.sin(radsBetweenNodes * i);
+
+                // Create a node and add it to the graph.
+                const node = Graph.node(nodeName(x, y), {x, y});
+                graph.addNode(node);
+
+                // Create an edge and add it to the graph.
+                const edge = Graph.edge(edgeName(centerNode.data.id, node.data.id), centerNode.data.id, node.data.id);
+                graph.addEdge(edge);
+            }
+        }
+        catch (err) {
+            console.error(err);
+        }
+
+        return graph;
+    }
+
+    public static wagonWheel(nodes: number, edgeLength: number): Graph {
+        const graph = new Graph();
+        
+        try {
+            const nodeName = (x: number, y: number) => `${x.toPrecision(2)}_${y.toPrecision(2)}`;
+            const edgeName = (n1: string, n2: string) => `${n1}_${n2}`;
+
+            // Add the center node
+            const centerNode = Graph.node(nodeName(0, 0));
+            graph.addNode(centerNode);
+
+            // We don't want to divide by zero later.
+            if (nodes === 1) {
+                return graph;
+            }
+
+            // Get the number of degrees between each of the petal nodes.
+            // This will be 360 degrees divided by the number of nodes-1.
+            const radsBetweenNodes = (2 * Math.PI) / (nodes - 1);
+            let lastNode = null;
+            for (let i = 1; i <= nodes; i++) {
+                const x = edgeLength * Math.cos(radsBetweenNodes * i);
+                const y = edgeLength * Math.sin(radsBetweenNodes * i);
+
+                // Create a node and add it to the graph.
+                const node = Graph.node(nodeName(x, y), {x, y});
+                graph.addNode(node);
+
+                // Create an edge and add it to the graph.
+                const spokeEdge = Graph.edge(edgeName(centerNode.data.id, node.data.id), centerNode.data.id, node.data.id);
+                graph.addEdge(spokeEdge);
+
+                if (lastNode !== null) {
+                    const wheelEdge = Graph.edge(edgeName(lastNode.data.id, node.data.id), lastNode.data.id, node.data.id);
+                    graph.addEdge(wheelEdge);
+                }
+                lastNode = node;
+            }
+        }
+        catch (err) {
+            console.error(err);
+        }
+
+        return graph;
+    }
+
     private static getRandomInt(max: number): number {
         return Math.floor(Math.random() * max);
     }
