@@ -4,6 +4,7 @@ import { usePrevious } from 'Utils';
 import { ChangeEvent, useEffect, useState } from 'react'; 
 import GraphGen from 'Graph/GraphGen';
 import GraphLayout from 'Graph/GraphLayout';
+import { SerialGraph } from 'Graph';
 import Vec2D from 'Utils/Vec2D';
 
 interface Props {
@@ -108,12 +109,21 @@ const stylesheet: cytoscape.Stylesheet[] = [
       }
 ]
 
+enum Mode {
+    AFD = 'Adaptive Force Directed',
+    Tick = 'Tick Force Directed'
+}
+
 const GraphVisualizer = ({}: Props) => {
+    const [mode, setMode] = useState<Mode>(Mode.AFD);
+    const [layout, setLayout] = useState<GraphLayout | null>(null);
     const [cy, setCy] = useState<cytoscape.Core | null>(null);
     const [el, setEl] = useState<HTMLElement | null>(null);
     const [numNodes, setNumNodes] = useState<number>(10);
     const [edgeLength, setEdgeLength] = useState<number>(1);
     const [graphType, setGraphType] = useState<string>("weakSparse");
+
+    const[iter, setIter] = useState<number>(0);
 
     useEffect(() => {
         setEl(document.getElementById('graph-target'));
@@ -148,11 +158,20 @@ const GraphVisualizer = ({}: Props) => {
                     break;
             }
 
-            const layout = new GraphLayout(graph);
+            const _layout = new GraphLayout(graph);
 
-            const data = layout.adaptiveForceDirected().serialize();
+            let data: SerialGraph
 
-            console.log(data);
+            switch (mode) {
+                case Mode.AFD:
+                    data = _layout.adaptiveForceDirected().serialize();
+                    break;
+                case Mode.Tick:
+                    data = _layout.grid().serialize();
+                    break;
+            }
+
+            setLayout(_layout);
 
             setCy(cytoscape({
                 container: el,
@@ -166,6 +185,8 @@ const GraphVisualizer = ({}: Props) => {
             cy.fit();
         }
     }, [cy, el, edgeLength, graphType, numNodes]);
+
+
 
     const refreshClick = () => {
         setCy(null);
@@ -198,6 +219,29 @@ const GraphVisualizer = ({}: Props) => {
         }
     }
 
+    const tick = () => {
+        if (cy && layout) {
+            const map = layout.tickForceDirected();
+
+            cy.nodes().positions(ele => {
+                const r = map.get(ele.id())?.r;
+                
+                if (r) {
+                    return {x: r.x, y: r.y};
+                } else {
+                    return ele.position();
+                }
+            });
+        }
+    }
+
+    const modeChange = (event: ChangeEvent<HTMLSelectElement>) => {
+        if (event.target.value !== mode) {
+            setMode(event.target.value as Mode);
+            setCy(null);
+        }
+    }
+
     return (
         <>
             <ButtonRow>
@@ -210,6 +254,11 @@ const GraphVisualizer = ({}: Props) => {
                     <option value="dandelion">dandelion</option>
                     <option value="wagonWheel">wagonWheel</option>
                 </HotBoiSelect>
+                <HotBoiSelect onChange={modeChange} id="mode">
+                    <option value={Mode.AFD}>{Mode.AFD}</option>
+                    <option value={Mode.Tick}>{Mode.Tick}</option>
+                </HotBoiSelect>
+                <HotBoibutton onClick={tick} disabled={mode !== Mode.Tick}>tick</HotBoibutton>
                 <label htmlFor="numNodes"># nodes</label>
                 <HotBoiInput placeholder="# of nodes" type="number" value={numNodes} onChange={numNodesChange} title="Number of nodes in this graph" id="numNodes"/>
                 <label htmlFor="edgeLength">edge length</label>

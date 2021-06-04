@@ -39,7 +39,7 @@ export default class GraphLayout {
     /* 
         LIMITING
     */
-    private static readonly MIN_DIST: number = GraphLayout.SPACING / 10;
+    private static readonly MIN_DIST: number = GraphLayout.SPACING / 40;
 
     /* 
         BARNES-HUT    
@@ -65,8 +65,8 @@ export default class GraphLayout {
         const start = Date.now();
 
         // Main physics loop
-        // this.initGrid();
-        this.initRandom();
+        this.initGrid();
+        // this.initRandom();
 
         for (let t = 0; t < GraphLayout.MAX_ITER; t++) {
             if (this.graph.nodeMap.size > GraphLayout.TRANSITION) {
@@ -86,6 +86,18 @@ export default class GraphLayout {
         console.log("took " + (Date.now() - start) + " ms to run on graph of size " + this.graph.nodeMap.size);
 
         return this.graph.mapToGraph();
+    }
+
+    public tickForceDirected(): FlatGraph['nodeMap'] {
+        if (this.graph.nodeMap.size > GraphLayout.TRANSITION) {
+            this.computeAllBHForces();
+        } else {
+            this.computeAllFRGForces();
+        }
+        this.adaptiveCool();
+        this.updateEnergy();
+        this.updatePositions();
+        return this.graph.nodeMap;
     }
 
     private initGrid(): void {
