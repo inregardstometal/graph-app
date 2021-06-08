@@ -1,4 +1,4 @@
-import Vec2D from '../Utils/Vec2D';
+import { Vec2D } from '../Utils';
 import Graph, { SerialGraph } from './Graph';
 
 export class FlatNode {

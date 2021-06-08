@@ -224,6 +224,9 @@ const GraphVisualizer = ({}: Props) => {
         if (cy && layout) {
             const map = layout.tickForceDirected();
 
+            console.log(layout.getBoundingBox());
+            console.log(cy.nodes().boundingBox({}))
+
             cy.nodes().positions(ele => {
                 const r = map.get(ele.id())?.r;
                 

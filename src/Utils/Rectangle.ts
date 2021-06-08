@@ -8,6 +8,9 @@ export class Rectangle {
         return this._minX;
     }
     set minX(val: number) {
+        if (val > this._maxX) {
+            throw new RangeError('minX too large');
+        }
         this._minX = val;
     }
 
@@ -16,6 +19,9 @@ export class Rectangle {
         return this._maxX;
     }
     set maxX(val: number) {
+        if (val < this._minX) {
+            throw new RangeError('maxX too small');
+        }
         this._maxX = val;
     }
 
@@ -24,6 +30,9 @@ export class Rectangle {
         return this._minY;
     }
     set minY(val: number) {
+        if (val > this._maxY) {
+            throw new RangeError('minY too large');
+        }
         this._minY = val;
     }
 
@@ -32,6 +41,9 @@ export class Rectangle {
         return this._maxY;
     }
     set maxY(val: number) {
+        if (val < this._minY) {
+            throw new RangeError('maxY too small');
+        }
         this._maxY = val;
     }
 
