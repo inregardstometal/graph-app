@@ -1,5 +1,5 @@
 import Graph from './Graph';
-import Vec2D from '../Utils/Vec2D';
+import { Vec2D, Rectangle } from '../Utils';
 import FlatGraph, { FlatNode, FlatEdge } from './FlatGraph';
 export default class GraphLayout {
 
@@ -273,4 +273,44 @@ export default class GraphLayout {
             node.r.add(node.v.scale(this.STEP_SIZE));
         }
     }
+
+    public getBoundingBox(): Rectangle {
+        let extremities = this.nodeExtremities();
+        return new Rectangle(extremities.x, extremities.y);
+    }
+
+    private nodeExtremities(): {x: [number, number], y: [number, number]} {
+        let minX: nNumber = null;
+        let maxX: nNumber = null;
+        let minY: nNumber = null;
+        let maxY: nNumber = null;
+
+        for (let node of this.graph.nodeMap.values()) {
+            if (!minX || !maxX || !minY || !maxY) {
+                minX = node.r.x;
+                maxX = node.r.x;
+                minY = node.r.y;
+                maxY = node.r.y;
+            } else {
+                minX = minX > node.r.x ? node.r.x : minX;
+                maxX = maxX < node.r.x ? node.r.x : maxX;
+                minY = minY > node.r.y ? node.r.y : minY;
+                minX = maxY < node.r.y ? node.r.y : maxY;
+            }
+        }
+
+        if (!minX || !maxX || !minY || !maxY) {
+            return {
+                x: [0, 0],
+                y: [0, 0]
+            }
+        } else {
+            return {
+                x: [minX, maxX],
+                y: [minY, maxY]
+            }
+        }
+    }
 }
+
+type nNumber = number | null;

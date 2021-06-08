@@ -1,6 +1,6 @@
 type TupleVec2D = [number, number];
 
-export default class Vec2D {
+export class Vec2D {
     private _x: number;
     private _y: number;
 

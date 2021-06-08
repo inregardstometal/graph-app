@@ -2,7 +2,7 @@
 /**
  * VERY OOP
  */
-export default class Rectangle {
+export class Rectangle {
     private _minX: number;
     get minX(): number {
         return this._minX;
