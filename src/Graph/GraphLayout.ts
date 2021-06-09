@@ -313,4 +313,30 @@ export default class GraphLayout {
     }
 }
 
+class BHQuadtree {
+    private graph: FlatGraph;   
+
+    //Child nodes
+    private I: BHQuadtree | null = null;
+    private II: BHQuadtree | null = null;
+    private III: BHQuadtree | null = null;
+    private IV: BHQuadtree | null = null;
+
+    //Physical body
+    private body: FlatNode | null = null;
+    //Is this node internal?
+    private internal: boolean = false;
+
+    constructor(graph: FlatGraph) {
+        this.graph = graph;
+    }
+
+    private buildTree() {
+        for(let node of this.graph.nodeMap.values()) {
+            
+        }
+    }
+
+}
+
 type nNumber = number | null;
