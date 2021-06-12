@@ -2,10 +2,8 @@ import cytoscape from 'cytoscape';
 import styled from '@emotion/styled';
 import { usePrevious } from 'Utils';
 import { ChangeEvent, useEffect, useState, useRef } from 'react'; 
-import GraphGen from 'Graph/GraphGen';
-import GraphLayout from 'Graph/GraphLayout';
-import { SerialGraph } from 'Graph';
-import Vec2D from 'Utils/Vec2D';
+import { GraphGen, _GraphLayout, SerialGraph } from 'Graph';
+import { Vec2D } from 'Utils';
 
 interface Props {
 
@@ -116,7 +114,7 @@ enum Mode {
 
 const GraphVisualizer = ({}: Props) => {
     const [mode, setMode] = useState<Mode>(Mode.AFD);
-    const [layout, setLayout] = useState<GraphLayout | null>(null);
+    const [layout, setLayout] = useState<_GraphLayout | null>(null);
     const [cy, setCy] = useState<cytoscape.Core | null>(null);
     const [el, setEl] = useState<HTMLElement | null>(null);
     const [numNodes, setNumNodes] = useState<number>(10);
@@ -165,7 +163,7 @@ const GraphVisualizer = ({}: Props) => {
                     break;
             }
 
-            const _layout = new GraphLayout(graph);
+            const _layout = new _GraphLayout(graph);
 
             let data: SerialGraph
 

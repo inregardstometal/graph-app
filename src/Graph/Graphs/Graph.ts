@@ -21,7 +21,7 @@ export interface SerialGraph {
     edges: Edge[];
 }
 
-export default class Graph {
+export class Graph {
     public nodes: Node[];
     public edges: Edge[];
 

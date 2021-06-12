@@ -1,7 +1,7 @@
-import Graph from './Graph';
-import Vec2D from '../Utils/Vec2D';
-import FlatGraph, { FlatNode, FlatEdge } from './FlatGraph';
-export default class GraphLayout {
+import { Vec2D } from '../../Utils';
+import { FlatGraph, FlatNode, Graph } from '../Graphs';
+
+export class _GraphLayout {
 
     private graph: FlatGraph;
 
@@ -19,9 +19,9 @@ export default class GraphLayout {
     // Relative strength parameter (r vs a)
     private static readonly C: number = 1;
     // "Ideal spring length"
-    private static readonly K: number = GraphLayout.SPACING / Math.cbrt(GraphLayout.C);
+    private static readonly K: number = _GraphLayout.SPACING / Math.cbrt(_GraphLayout.C);
     // Precompute for the sake of efficiency
-    private static readonly K_SQUARED: number = GraphLayout.K * GraphLayout.K;
+    private static readonly K_SQUARED: number = _GraphLayout.K * _GraphLayout.K;
 
     /* 
         COOLING
@@ -33,13 +33,13 @@ export default class GraphLayout {
     /* 
         STALENESS
     */
-    private static readonly MAX_STALE_ITER: number = GraphLayout.MAX_COOLING_EXP + 5;
+    private static readonly MAX_STALE_ITER: number = _GraphLayout.MAX_COOLING_EXP + 5;
     private static readonly STALE_THRESHOLD: number = 0.02;
 
     /* 
         LIMITING
     */
-    private static readonly MIN_DIST: number = GraphLayout.SPACING / 40;
+    private static readonly MIN_DIST: number = _GraphLayout.SPACING / 40;
 
     /* 
         BARNES-HUT    
@@ -52,7 +52,7 @@ export default class GraphLayout {
     // Last run's energy
     private E_0 = this.E;
     // Position update scaling factor
-    private STEP_SIZE = GraphLayout.INIT_STEP_SIZE;
+    private STEP_SIZE = _GraphLayout.INIT_STEP_SIZE;
     private PROGRESS = 0;
     private STALE = 0;
     
@@ -68,8 +68,8 @@ export default class GraphLayout {
         this.initGrid();
         // this.initRandom();
 
-        for (let t = 0; t < GraphLayout.MAX_ITER; t++) {
-            if (this.graph.nodeMap.size > GraphLayout.TRANSITION) {
+        for (let t = 0; t < _GraphLayout.MAX_ITER; t++) {
+            if (this.graph.nodeMap.size > _GraphLayout.TRANSITION) {
                 this.computeAllBHForces();
             } else {
                 this.computeAllFRGForces();
@@ -89,7 +89,7 @@ export default class GraphLayout {
     }
 
     public tickForceDirected(): FlatGraph['nodeMap'] {
-        if (this.graph.nodeMap.size > GraphLayout.TRANSITION) {
+        if (this.graph.nodeMap.size > _GraphLayout.TRANSITION) {
             this.computeAllBHForces();
         } else {
             this.computeAllFRGForces();
@@ -104,8 +104,8 @@ export default class GraphLayout {
         const side = Math.ceil(Math.sqrt(this.graph.nodeMap.size));
         let i = 0;
         for(let node of this.graph.nodeMap.values()) {
-            const x = (i % side) * GraphLayout.SPACING;
-            const y = Math.floor(i / side) * GraphLayout.SPACING;
+            const x = (i % side) * _GraphLayout.SPACING;
+            const y = Math.floor(i / side) * _GraphLayout.SPACING;
             node.r = new Vec2D([x, y]);
             i++;
         }
@@ -114,7 +114,7 @@ export default class GraphLayout {
     private initRandom(): void {
         const size = Math.sqrt(this.graph.nodeMap.size);
         for(let node of this.graph.nodeMap.values()) {
-            node.r = new Vec2D([Math.random() * GraphLayout.SPACING  * size, Math.random() * GraphLayout.SPACING * size]);
+            node.r = new Vec2D([Math.random() * _GraphLayout.SPACING  * size, Math.random() * _GraphLayout.SPACING * size]);
         }
     }
 
@@ -157,12 +157,12 @@ export default class GraphLayout {
             const disp = Vec2D.displacement(node.r, body.r);
             let len = disp.norm();
 
-            if (len < GraphLayout.MIN_DIST) {
-                len = GraphLayout.MIN_DIST;
+            if (len < _GraphLayout.MIN_DIST) {
+                len = _GraphLayout.MIN_DIST;
             }
 
             disp.normalize();
-            const scalar = ((GraphLayout.C * GraphLayout.K_SQUARED) / (len * len));
+            const scalar = ((_GraphLayout.C * _GraphLayout.K_SQUARED) / (len * len));
             force.add(disp.scale(scalar));
         }
         return force;
@@ -186,12 +186,12 @@ export default class GraphLayout {
             const disp = Vec2D.displacement(node.r, body.r);
             let len = disp.norm();
 
-            if (len < GraphLayout.MIN_DIST) {
-                len = GraphLayout.MIN_DIST;
+            if (len < _GraphLayout.MIN_DIST) {
+                len = _GraphLayout.MIN_DIST;
             }
 
             disp.normalize();
-            const scalar = -len / GraphLayout.K;
+            const scalar = -len / _GraphLayout.K;
             force.add(disp.scale(scalar));
         }
         return force;
@@ -233,13 +233,13 @@ export default class GraphLayout {
     private adaptiveCool(): void {
         if (this.E < this.E_0) {
             this.PROGRESS++;
-            if (this.PROGRESS >= GraphLayout.MAX_COOLING_EXP) {
+            if (this.PROGRESS >= _GraphLayout.MAX_COOLING_EXP) {
                 this.PROGRESS = 0;
-                this.STEP_SIZE = this.STEP_SIZE / GraphLayout.INIT_COOLING_FACTOR;
+                this.STEP_SIZE = this.STEP_SIZE / _GraphLayout.INIT_COOLING_FACTOR;
             }
         } else {
             this.PROGRESS = 0;
-            this.STEP_SIZE = this.STEP_SIZE * GraphLayout.INIT_COOLING_FACTOR;
+            this.STEP_SIZE = this.STEP_SIZE * _GraphLayout.INIT_COOLING_FACTOR;
         }
     }
 
@@ -247,15 +247,15 @@ export default class GraphLayout {
      * Determine whether the layout has finished
      */
     private shouldEndLayout(iter: number): boolean {
-        if (iter < GraphLayout.MIN_ITER || this.E === 0 || this.E_0 === 0) {
+        if (iter < _GraphLayout.MIN_ITER || this.E === 0 || this.E_0 === 0) {
             return false;
         }
 
         const delta = Math.abs((this.E - this.E_0) / (this.E_0));
 
-        if (delta < GraphLayout.STALE_THRESHOLD) {
+        if (delta < _GraphLayout.STALE_THRESHOLD) {
             this.STALE++;
-            if (this.STALE > GraphLayout.MAX_STALE_ITER) {
+            if (this.STALE > _GraphLayout.MAX_STALE_ITER) {
                 return true;
             }
         } else {

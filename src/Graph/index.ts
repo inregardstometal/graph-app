@@ -1,3 +1,3 @@
-export * from './GraphGen';
-export * from './GraphLayout';
-export * from './Graph';
+export * from './GraphUtils';
+export * from './Layouts';
+export * from './Graphs';

@@ -1,5 +1,5 @@
-import Vec2D from '../Utils/Vec2D';
-import Graph, { SerialGraph } from './Graph';
+import { Vec2D } from '../../Utils';
+import { Graph, SerialGraph } from './Graph';
 
 export class FlatNode {
     public id: string;
@@ -23,7 +23,7 @@ export class FlatEdge {
     }
 }
 
-export default class FlatGraph {
+export class FlatGraph {
     // Stores node information
     public nodeMap: Map<FlatNode['id'], FlatNode> = new Map<FlatNode['id'], FlatNode>();
     // Stores edge information in a way that preserves direction (for reconstruction only)

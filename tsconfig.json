@@ -21,6 +21,7 @@
     "jsx": "react-jsx",
     "baseUrl": "src",
     "downlevelIteration": true,
+    "noImplicitOverride": true,
   },
   "include": [
     "src"

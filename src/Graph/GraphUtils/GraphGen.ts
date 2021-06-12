@@ -1,9 +1,9 @@
-import Graph from './Graph';
+import { Graph } from '../Graphs';
 interface GenerationOptions {
 
 }
 
-export default class GraphGen {
+export class GraphGen {
     
     /**
      * Creates a maximally sparse connected graph; i.e. a graph where each node has only one edge,
