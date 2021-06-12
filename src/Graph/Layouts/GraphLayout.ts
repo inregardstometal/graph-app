@@ -1,7 +1,7 @@
 import { Graph } from '../Graphs';
 
 export abstract class GraphLayout {
-    private _graph: Graph;
+    protected _graph: Graph;
 
     /**
      * Quantity determining the space between nodes in the final layout
