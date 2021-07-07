@@ -3,7 +3,7 @@ import { Graph, FlatGraph, FlatNode } from '../../Graphs';
 
 export class FRLayout extends ForceDirectedLayout {
 
-    private flatGraph: FlatGraph;
+    protected flatGraph: FlatGraph;
 
     /* 
         FORCES
@@ -12,7 +12,7 @@ export class FRLayout extends ForceDirectedLayout {
      * Parameter governing relative strength of attractive and repulsive force. 
      * Increasing this parameter makes repulsive force stronger
      */
-    private _C: number = 1;
+    protected _C: number = 1;
     /**
      * 
      */
@@ -28,22 +28,22 @@ export class FRLayout extends ForceDirectedLayout {
         this._K_squared = this._K * this._K;
     }
 
-    override set spacing(val: number) {
-        this._spacing = val;
-        this._K = this.produceK();
-        this._K_squared = this._K * this._K;
-    }
+    // override set spacing(val: number) {
+    //     this._spacing = val;
+    //     this._K = this.produceK();
+    //     this._K_squared = this._K * this._K;
+    // }
 
-    private _K: number = this.produceK();
-    private produceK(): number {
+    protected _K: number = this.produceK();
+    protected produceK(): number {
         return this._spacing / Math.cbrt(this._C);
     }
-    private _K_squared: number = this._K * this._K;
+    protected _K_squared: number = this._K * this._K;
 
     /* 
         COOLING
     */
-    private _initStepSize: number = 1;
+    protected _initStepSize: number = 1;
     get initStepSize() {
         return this._initStepSize;
     }
@@ -53,7 +53,7 @@ export class FRLayout extends ForceDirectedLayout {
         }
     }
 
-    private _coolingFactor: number = 0.9;
+    protected _coolingFactor: number = 0.9;
     get coolingFactor() {
         return this._coolingFactor;
     }
@@ -63,7 +63,7 @@ export class FRLayout extends ForceDirectedLayout {
         }
     }
 
-    private _maxCoolingExponent: number = 5;
+    protected _maxCoolingExponent: number = 5;
     get maxCoolingExponent() {
         return this._maxCoolingExponent;
     }
@@ -77,7 +77,7 @@ export class FRLayout extends ForceDirectedLayout {
     /* 
         STALENESS
     */
-    private _maxStaleIterations: number = this._maxCoolingExponent + 5;
+    protected _maxStaleIterations: number = this._maxCoolingExponent + 5;
     get maxStaleIterations() {
         return this._maxStaleIterations;
     }
@@ -88,7 +88,7 @@ export class FRLayout extends ForceDirectedLayout {
         this._maxStaleIterations = val;
     }
 
-    private _staleThreshold: number = 0.02;
+    protected _staleThreshold: number = 0.02;
     get staleThreshold() {
         return this._staleThreshold;
     }
@@ -102,7 +102,7 @@ export class FRLayout extends ForceDirectedLayout {
     /* 
         LIMITING
     */
-    private _minDist: number = this._spacing / 40;
+    protected _minDist: number = this._spacing / 40;
     get minDist() {
         return this._minDist;
     }
@@ -114,11 +114,11 @@ export class FRLayout extends ForceDirectedLayout {
     }
 
 
-    private E = 0;
-    private E_0 = this.E;
-    private step_size = this.initStepSize;
-    private progress = 0;
-    private stale = 0;
+    protected _energy = 0;
+    protected _energy_0 = this._energy;
+    protected _step_size = this._initStepSize;
+    protected _progress = 0;
+    protected _stale = 0;
     
 
     constructor(graph: Graph) {
@@ -131,7 +131,7 @@ export class FRLayout extends ForceDirectedLayout {
         return new Graph();
     }
 
-    private doSomething(): number {
+    protected doSomething(): number {
         return this._minIterations;
     }
 

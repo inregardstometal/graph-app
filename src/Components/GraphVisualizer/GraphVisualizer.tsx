@@ -237,6 +237,18 @@ const GraphVisualizer = ({}: Props) => {
         }
     }
 
+    const kick = () => {
+        if (cy && layout) {
+            layout.randomKick();
+
+            cy.nodes().positions(ele => {
+                const r = layout.graph.nodeMap.get(ele.id())?.r;
+
+                return r ? {x: r.x, y: r.y} : ele.position();
+            });
+        }
+    }
+
     const autoTick = () => {
         setInterCode(setInterval(() => {
             tick();
@@ -287,6 +299,7 @@ const GraphVisualizer = ({}: Props) => {
                         <HotBoibutton onClick={tick}>tick</HotBoibutton>
                         {interCode === null ? <HotBoibutton onClick={autoTick}>Auto Tick</HotBoibutton> : <HotBoibutton onClick={endTick}>Stop Ticking</HotBoibutton>}
                         <label>Tick: {iteration.current}</label>
+                        <HotBoibutton onClick={kick}>kick</HotBoibutton>
                     </>
                 }
                 <HotBoiInput type='number' placeholder='tick length' value={int} onChange={e => setInt(e.target.valueAsNumber)}/>

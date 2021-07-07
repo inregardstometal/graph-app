@@ -3,7 +3,11 @@ import { FlatGraph, FlatNode, Graph } from '../Graphs';
 
 export class _GraphLayout {
 
-    private graph: FlatGraph;
+    private _graph: FlatGraph;
+
+    get graph(): FlatGraph {
+        return this._graph;
+    }
 
     /* 
         ITERATION
@@ -58,7 +62,7 @@ export class _GraphLayout {
     
 
     constructor(graph: Graph){
-        this.graph = new FlatGraph(graph);
+        this._graph = new FlatGraph(graph);
     }
 
     public adaptiveForceDirected(): Graph {
@@ -69,7 +73,7 @@ export class _GraphLayout {
         // this.initRandom();
 
         for (let t = 0; t < _GraphLayout.MAX_ITER; t++) {
-            if (this.graph.nodeMap.size > _GraphLayout.TRANSITION) {
+            if (this._graph.nodeMap.size > _GraphLayout.TRANSITION) {
                 this.computeAllBHForces();
             } else {
                 this.computeAllFRGForces();
@@ -83,13 +87,13 @@ export class _GraphLayout {
             this.updatePositions();
         }
 
-        console.log("took " + (Date.now() - start) + " ms to run on graph of size " + this.graph.nodeMap.size);
+        console.log("took " + (Date.now() - start) + " ms to run on _graph of size " + this._graph.nodeMap.size);
 
-        return this.graph.mapToGraph();
+        return this._graph.mapToGraph();
     }
 
     public tickForceDirected(): FlatGraph['nodeMap'] {
-        if (this.graph.nodeMap.size > _GraphLayout.TRANSITION) {
+        if (this._graph.nodeMap.size > _GraphLayout.TRANSITION) {
             this.computeAllBHForces();
         } else {
             this.computeAllFRGForces();
@@ -97,13 +101,13 @@ export class _GraphLayout {
         this.adaptiveCool();
         this.updateEnergy();
         this.updatePositions();
-        return this.graph.nodeMap;
+        return this._graph.nodeMap;
     }
 
     private initGrid(): void {
-        const side = Math.ceil(Math.sqrt(this.graph.nodeMap.size));
+        const side = Math.ceil(Math.sqrt(this._graph.nodeMap.size));
         let i = 0;
-        for(let node of this.graph.nodeMap.values()) {
+        for(let node of this._graph.nodeMap.values()) {
             const x = (i % side) * _GraphLayout.SPACING;
             const y = Math.floor(i / side) * _GraphLayout.SPACING;
             node.r = new Vec2D([x, y]);
@@ -112,15 +116,15 @@ export class _GraphLayout {
     }
 
     private initRandom(): void {
-        const size = Math.sqrt(this.graph.nodeMap.size);
-        for(let node of this.graph.nodeMap.values()) {
+        const size = Math.sqrt(this._graph.nodeMap.size);
+        for(let node of this._graph.nodeMap.values()) {
             node.r = new Vec2D([Math.random() * _GraphLayout.SPACING  * size, Math.random() * _GraphLayout.SPACING * size]);
         }
     }
 
     public grid(): Graph {
         this.initGrid();
-        return this.graph.mapToGraph();
+        return this._graph.mapToGraph();
     }
 
     private logEnergy(iter: number): void {
@@ -135,7 +139,7 @@ export class _GraphLayout {
      * Compute forces using Fruchterman-Reingold approach 
      */
     private computeAllFRGForces(): void {
-        for(let node of this.graph.nodeMap.values()) {
+        for(let node of this._graph.nodeMap.values()) {
             let force = this.computeFRGElectricForce(node);
             force.add(this.computeSpringForce(node));
             this.sumEnergy(force);
@@ -149,7 +153,7 @@ export class _GraphLayout {
      */
     private computeFRGElectricForce(node: FlatNode): Vec2D {
         let force = new Vec2D();
-        for(let body of this.graph.nodeMap.values()) {
+        for(let body of this._graph.nodeMap.values()) {
             if(node === body) {
                 continue;
             }
@@ -173,7 +177,7 @@ export class _GraphLayout {
      * @param node 
      */
     private computeSpringForce(node: FlatNode): Vec2D {
-        const map = this.graph.adjacencyMap.get(node.id)!;
+        const map = this._graph.adjacencyMap.get(node.id)!;
         let force = new Vec2D();
 
         if (!map) {
@@ -181,7 +185,7 @@ export class _GraphLayout {
         }
 
         for(let nodeRef of map) {
-            const body = this.graph.nodeMap.get(nodeRef)!;
+            const body = this._graph.nodeMap.get(nodeRef)!;
 
             const disp = Vec2D.displacement(node.r, body.r);
             let len = disp.norm();
@@ -195,6 +199,21 @@ export class _GraphLayout {
             force.add(disp.scale(scalar));
         }
         return force;
+    }
+
+    /**
+     * Randomly kick all nodes in the _graph
+     * @param size optional magnitude of kick
+     */
+    public randomKick(size?: number): void {
+        let magnitude = size ?? (_GraphLayout.SPACING * 5);
+
+        for(let node of this._graph.nodeMap.values()) {
+            const x = Math.random() * magnitude;
+            const y = Math.random() * magnitude;
+            const disp = new Vec2D([x, y]);
+            node.r.add(disp);
+        }
     }
 
     /**
@@ -269,7 +288,7 @@ export class _GraphLayout {
      * Update the positions of all nodes but summing in their velocity
      */
     private updatePositions(): void {
-        for(let node of this.graph.nodeMap.values()) {
+        for(let node of this._graph.nodeMap.values()) {
             node.r.add(node.v.scale(this.STEP_SIZE));
         }
     }
