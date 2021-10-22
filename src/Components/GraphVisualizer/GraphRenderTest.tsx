@@ -9,7 +9,7 @@ export function GraphRenderTest(): JSX.Element {
 
     useEffect(() => {
         try {
-            const graph = GraphGen.grid(10, 10);
+            const graph = GraphGen.grid(3, 3);
             const flatGraph = new FlatGraph(graph);
             if (anchorRef.current) {
                 const renderer = new GraphRenderer(anchorRef.current);

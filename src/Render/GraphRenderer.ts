@@ -10,14 +10,24 @@ export class GraphRenderer {
     protected anchor: HTMLElement;
 
     protected _rendering: boolean = false;
-    public get rendering() { return this._rendering }
+    public get rendering() {
+        return this._rendering;
+    }
 
-    get height() { return this.anchor.clientHeight }
-    get width() { return this.anchor.clientWidth }
+    get height() {
+        return this.anchor.clientHeight;
+    }
+    get width() {
+        return this.anchor.clientWidth;
+    }
 
-    protected renderer: THREE.WebGLRenderer = new THREE.WebGLRenderer({ alpha: true});
+    protected renderer: THREE.WebGLRenderer = new THREE.WebGLRenderer({
+        alpha: true,
+    });
     protected camera: THREE.PerspectiveCamera;
     protected scene: THREE.Scene = new THREE.Scene();
+
+    protected info: HTMLElement | null = null;
 
     protected _resizeObserver: ResizeObserver;
     protected get resizeObserver(): ResizeObserver {
@@ -33,20 +43,32 @@ export class GraphRenderer {
         fov: 40,
         nearPlane: 0.1,
         farPlane: 2000,
+        panSens: 0.01,
+        zoomSens: 0.1,
     };
 
     protected _fov = GraphRenderer.defaults.fov;
-    get fov() { return this._fov }
-    set fov(val: number) { this._fov = val }
+    get fov() {
+        return this._fov;
+    }
+    set fov(val: number) {
+        this._fov = val;
+    }
 
     protected _graph: FlatGraph | null = null;
-    public get graph() { return this._graph }
-    public set graph(val: FlatGraph | null) { this._graph = val;}
+    public get graph() {
+        return this._graph;
+    }
+    public set graph(val: FlatGraph | null) {
+        this._graph = val;
+    }
 
     constructor(anchor: HTMLElement) {
         this.anchor = anchor;
         this.camera = this.createCamera();
         this._resizeObserver = this.observeResize();
+        this.listenForZoom();
+        this.listenForPan();
         this.initializeRenderer();
     }
 
@@ -59,12 +81,50 @@ export class GraphRenderer {
 
     protected _render = (): void => {
         if (this._rendering) {
-
             this.renderNodes();
 
             requestAnimationFrame(this._render);
+            const pos = this.camera.position;
+            if (this.info) this.info.innerText = `Camera Position: (${pos.x.toFixed(4)}, ${pos.y.toFixed(4)}, ${pos.z.toFixed(4)})`;
             this.renderer.render(this.scene, this.camera);
         }
+    };
+
+    public listenForZoom(): void {
+        this.renderer.domElement.addEventListener("wheel", (event) => {
+            const pos = this.camera.position;
+            this.camera.position.set(
+                pos.x,
+                pos.y,
+                pos.z +
+                    this.getZFromScale(event.deltaY) *
+                        GraphRenderer.defaults.zoomSens
+            );
+        });
+    }
+
+    public listenForPan(): void {
+        let shouldUpdate = false;
+        const callback = (ev: MouseEvent) => {
+            if (shouldUpdate) {
+                const pos = this.camera.position;
+                this.camera.position.set(
+                    pos.x - GraphRenderer.defaults.panSens * ev.movementX,
+                    pos.y + GraphRenderer.defaults.panSens * ev.movementY,
+                    pos.z
+                );
+            }
+        };
+
+        this.renderer.domElement.addEventListener("mousemove", callback);
+
+        this.renderer.domElement.addEventListener("mousedown", () => {
+            shouldUpdate = true;
+        });
+
+        this.renderer.domElement.addEventListener("mouseup", () => {
+            shouldUpdate = false;
+        });
     }
 
     public stop(): void {
@@ -84,7 +144,9 @@ export class GraphRenderer {
         const array = GraphRenderer.vertsToArray(vertices);
         geometry.setAttribute("position", new THREE.BufferAttribute(array, 3));
 
-        const material = new THREE.PointsMaterial({ color: new THREE.Color(0xFF0000)});
+        const material = new THREE.PointsMaterial({
+            color: new THREE.Color(0xff0000),
+        });
 
         const points = new THREE.Points(geometry, material);
         this.scene.background = new THREE.Color(0xefefef);
@@ -133,6 +195,12 @@ export class GraphRenderer {
 
     protected initializeRenderer(): void {
         this.anchor.appendChild(this.renderer.domElement);
+        const el = document.createElement("p");
+        el.style.setProperty("position", "absolute");
+        el.style.setProperty("top", "5px");
+        el.style.setProperty("right", "5px");
+        this.info = el;
+        this.anchor.appendChild(el)
     }
 
     protected aspect(el: Element): number {
@@ -140,14 +208,14 @@ export class GraphRenderer {
     }
 
     protected getScaleFromZ(cameraZ: number): number {
-        const halfFovRadians =  GraphRenderer.radians(this.fov / 2);
-        const fovHeight = (Math.tan(halfFovRadians) * cameraZ) * 2;
+        const halfFovRadians = GraphRenderer.radians(this.fov / 2);
+        const fovHeight = Math.tan(halfFovRadians) * cameraZ * 2;
         return fovHeight / this.height;
     }
 
     protected getZFromScale(scale: number): number {
-        const halfFovRadians =  GraphRenderer.radians(this.fov / 2);
-        return ((this.height / scale) / (2 * Math.tan(halfFovRadians)));
+        const halfFovRadians = GraphRenderer.radians(this.fov / 2);
+        return this.height / scale / (2 * Math.tan(halfFovRadians));
     }
 
     protected static radians(degrees: number): number {
