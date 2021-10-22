@@ -1,0 +1,195 @@
+import { Graph } from "Graph";
+import * as THREE from "three";
+import * as d3zoom from "d3-zoom";
+import * as d3sel from "d3-selection";
+import { v4 } from "uuid";
+import { FlatGraph } from "../Graph";
+
+export class GraphRenderer {
+    public readonly rendererId: string = v4();
+    protected anchor: HTMLElement;
+
+    protected _rendering: boolean = false;
+    public get rendering() { return this._rendering }
+
+    get height() { return this.anchor.clientHeight }
+    get width() { return this.anchor.clientWidth }
+
+    protected renderer: THREE.WebGLRenderer = new THREE.WebGLRenderer({ alpha: true});
+    protected camera: THREE.PerspectiveCamera;
+    protected scene: THREE.Scene = new THREE.Scene();
+
+    protected zoom: d3zoom.ZoomBehavior<Element, unknown>;
+
+    protected _resizeObserver: ResizeObserver;
+    protected get resizeObserver(): ResizeObserver {
+        return this._resizeObserver;
+    }
+    protected set resizeObserver(val: ResizeObserver) {
+        this._resizeObserver.disconnect();
+        this._resizeObserver = val;
+        this.observeResize();
+    }
+
+    protected static readonly defaults = {
+        fov: 40,
+        nearPlane: 10,
+        farPlane: 100,
+    };
+
+    protected _fov = GraphRenderer.defaults.fov;
+    get fov() { return this._fov }
+    set fov(val: number) { this._fov = val }
+
+    protected _graph: FlatGraph | null = null;
+    public get graph() { return this._graph }
+    public set graph(val: FlatGraph | null) { this._graph = val;}
+
+    constructor(anchor: HTMLElement) {
+        this.anchor = anchor;
+        this.camera = this.createCamera();
+        this._resizeObserver = this.observeResize();
+        this.zoom = this.createZoom();
+        this.initializeRenderer();
+        this.configureZoom();
+    }
+
+    public render(): void {
+        this._rendering = true;
+        console.log("rendering");
+        this._render();
+    }
+
+    protected _render = (): void => {
+        if (this._rendering) {
+            if (!this.graph) throw new Error("Graph was null");
+
+            this.renderNodes();
+
+            requestAnimationFrame(this._render);
+            this.renderer.setClearColor(0xEEEEEE);
+            this.renderer.render(this.scene, this.camera);
+        }
+    }
+
+    public stop(): void {
+        this._rendering = false;
+        console.log("stopping render");
+    }
+
+    protected renderNodes(): void {
+        const geometry = new THREE.BufferGeometry();
+        const vertices: THREE.Vector3[] = [];
+
+        for (const node of this.graph!.nodeMap.values()) {
+            const vert = new THREE.Vector3(node.r.x, node.r.y, 0);
+            vertices.push(vert);
+        }
+
+        const array = GraphRenderer.vertsToArray(vertices);
+        geometry.setAttribute("position", new THREE.BufferAttribute(array, 3));
+
+        const material = new THREE.PointsMaterial({ color: new THREE.Color(0xFF0000)});
+
+        const points = new THREE.Points(geometry, material);
+        this.scene.background = new THREE.Color(0xefefef);
+        this.scene.add(points);
+    }
+
+    protected static vertsToArray(verts: THREE.Vector3[]): Float32Array {
+        const length = verts.length * 3;
+        const array = new Float32Array(length);
+
+        for (const [index, vert] of verts.entries()) {
+            const arrayIdx = index * 3;
+            array[arrayIdx] = vert.x;
+            array[arrayIdx + 1] = vert.y;
+            array[arrayIdx + 2] = vert.z;
+        }
+
+        return array;
+    }
+
+    protected renderEdges(): void {
+        // TODO
+    }
+
+    protected observeResize(): ResizeObserver {
+        const ob = new ResizeObserver((entries, observer) => {
+            // assume only a single element is being observed
+            const target = entries[0].target;
+            const size = [target.clientWidth, target.clientHeight];
+            this.renderer.setSize(size[0], size[1]);
+        });
+
+        ob.observe(this.anchor);
+        return ob;
+    }
+
+    protected createCamera(): THREE.PerspectiveCamera {
+        return new THREE.PerspectiveCamera(
+            this.fov,
+            this.aspect(this.anchor),
+            GraphRenderer.defaults.nearPlane,
+            GraphRenderer.defaults.farPlane + 1
+        );
+    }
+
+    protected createZoom(): d3zoom.ZoomBehavior<Element, unknown> {
+        return d3zoom.zoom()
+            .scaleExtent([
+                this.getScaleFromZ(GraphRenderer.defaults.farPlane), 
+                this.getScaleFromZ(GraphRenderer.defaults.nearPlane)
+            ])
+            .on("zoom", ev => {
+                const transform = ev.transform as d3zoom.ZoomTransform;
+                this.zoomHandler(transform);
+            });
+    }
+
+    protected configureZoom(): void {
+        // This is fucked, take another look
+        // const selection = d3sel.select(this.renderer.domElement) as unknown as d3sel.Selection<Element, unknown, any, any>;
+        // this.zoom(selection);
+
+        // this is also super fucked
+        const selection = d3sel.select(this.renderer.domElement);
+        selection.call(this.zoom as any);
+        const initScale = this.getScaleFromZ(GraphRenderer.defaults.farPlane);
+        const initTransform = d3zoom.zoomIdentity.translate(this.width / 2, this.height / 2).scale(initScale);    
+        this.zoom.transform(selection as any, initTransform);
+        this.camera.position.set(0, 0, GraphRenderer.defaults.farPlane);
+    }
+
+    protected initializeRenderer(): void {
+        this.anchor.appendChild(this.renderer.domElement);
+    }
+
+    protected aspect(el: Element): number {
+        return el.clientWidth / el.clientHeight;
+    }
+
+    protected getScaleFromZ(cameraZ: number): number {
+        const halfFovRadians =  GraphRenderer.radians(this.fov / 2);
+        const fovHeight = (Math.tan(halfFovRadians) * cameraZ) * 2;
+        return fovHeight / this.height;
+    }
+
+    protected getZFromScale(scale: number): number {
+        const halfFovRadians =  GraphRenderer.radians(this.fov / 2);
+        return ((this.height / scale) / (2 * Math.tan(halfFovRadians)));
+    }
+
+    protected zoomHandler = (transform: d3zoom.ZoomTransform): void => {
+        console.log("handling zoom");
+        let scale = transform.k;
+        let x = -(transform.x - this.width/2) / scale;
+        let y = (transform.y - this.height/2) / scale;
+        let z = this.getZFromScale(scale);
+        this.camera.position.set(x, y, z);
+    }
+
+    protected static radians(degrees: number): number {
+        return degrees * (Math.PI / 180);
+    }
+}
