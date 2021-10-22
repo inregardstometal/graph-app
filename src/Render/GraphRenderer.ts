@@ -43,7 +43,7 @@ export class GraphRenderer {
         fov: 40,
         nearPlane: 0.1,
         farPlane: 2000,
-        panSens: 0.01,
+        panSens: 1,
         zoomSens: 0.1,
     };
 
@@ -108,9 +108,10 @@ export class GraphRenderer {
         const callback = (ev: MouseEvent) => {
             if (shouldUpdate) {
                 const pos = this.camera.position;
+                const scale = this.getScaleFromZ(pos.z);
                 this.camera.position.set(
-                    pos.x - GraphRenderer.defaults.panSens * ev.movementX,
-                    pos.y + GraphRenderer.defaults.panSens * ev.movementY,
+                    pos.x - GraphRenderer.defaults.panSens * ev.movementX * scale,
+                    pos.y + GraphRenderer.defaults.panSens * ev.movementY * scale,
                     pos.z
                 );
             }
