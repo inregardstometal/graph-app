@@ -3,7 +3,7 @@ import * as THREE from "three";
 import * as d3zoom from "d3-zoom";
 import * as d3sel from "d3-selection";
 import { v4 } from "uuid";
-import { FlatGraph } from "../Graph";
+import { FlatGraph, FlatNode, FlatEdge } from "../Graph";
 
 export class GraphRenderer {
     public readonly rendererId: string = v4();
@@ -61,7 +61,12 @@ export class GraphRenderer {
     }
     public set graph(val: FlatGraph | null) {
         this._graph = val;
+        if (this._graph) {
+            this.nodesArray = GraphRenderer.vertsToArray(GraphRenderer.nodesToVerts(this._graph.nodeMap.values()));
+        }
     }
+
+    protected nodesArray: Float32Array = new Float32Array();
 
     constructor(anchor: HTMLElement) {
         this.anchor = anchor;
@@ -82,11 +87,10 @@ export class GraphRenderer {
     protected _render = (): void => {
         if (this._rendering) {
             this.renderNodes();
-
-            requestAnimationFrame(this._render);
             const pos = this.camera.position;
             if (this.info) this.info.innerText = `Camera Position: (${pos.x.toFixed(4)}, ${pos.y.toFixed(4)}, ${pos.z.toFixed(4)})`;
             this.renderer.render(this.scene, this.camera);
+            requestAnimationFrame(this._render);
         }
     };
 
@@ -135,15 +139,8 @@ export class GraphRenderer {
 
     protected renderNodes(): void {
         const geometry = new THREE.BufferGeometry();
-        const vertices: THREE.Vector3[] = [];
 
-        for (const node of this.graph!.nodeMap.values()) {
-            const vert = new THREE.Vector3(node.r.x, node.r.y, 0);
-            vertices.push(vert);
-        }
-
-        const array = GraphRenderer.vertsToArray(vertices);
-        geometry.setAttribute("position", new THREE.BufferAttribute(array, 3));
+        geometry.setAttribute("position", new THREE.BufferAttribute(this.nodesArray, 3));
 
         const material = new THREE.PointsMaterial({
             color: new THREE.Color(0xff0000),
@@ -166,6 +163,15 @@ export class GraphRenderer {
         }
 
         return array;
+    }
+
+    protected static nodesToVerts(iter: IterableIterator<FlatNode>): THREE.Vector3[] {
+        const verts: THREE.Vector3[] = [];
+        for (const node of iter) {
+            const vert = new THREE.Vector3(node.r.x, node.r.y, 0);
+            verts.push(vert);
+        }
+        return verts;
     }
 
     protected renderEdges(): void {
