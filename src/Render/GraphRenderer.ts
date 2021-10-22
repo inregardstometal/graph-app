@@ -19,8 +19,6 @@ export class GraphRenderer {
     protected camera: THREE.PerspectiveCamera;
     protected scene: THREE.Scene = new THREE.Scene();
 
-    protected zoom: d3zoom.ZoomBehavior<Element, unknown>;
-
     protected _resizeObserver: ResizeObserver;
     protected get resizeObserver(): ResizeObserver {
         return this._resizeObserver;
@@ -33,8 +31,8 @@ export class GraphRenderer {
 
     protected static readonly defaults = {
         fov: 40,
-        nearPlane: 10,
-        farPlane: 100,
+        nearPlane: 0.1,
+        farPlane: 2000,
     };
 
     protected _fov = GraphRenderer.defaults.fov;
@@ -49,25 +47,22 @@ export class GraphRenderer {
         this.anchor = anchor;
         this.camera = this.createCamera();
         this._resizeObserver = this.observeResize();
-        this.zoom = this.createZoom();
         this.initializeRenderer();
-        this.configureZoom();
     }
 
     public render(): void {
         this._rendering = true;
         console.log("rendering");
+        if (!this.graph) throw new Error("Graph was null");
         this._render();
     }
 
     protected _render = (): void => {
         if (this._rendering) {
-            if (!this.graph) throw new Error("Graph was null");
 
             this.renderNodes();
 
             requestAnimationFrame(this._render);
-            this.renderer.setClearColor(0xEEEEEE);
             this.renderer.render(this.scene, this.camera);
         }
     }
@@ -120,6 +115,7 @@ export class GraphRenderer {
             const target = entries[0].target;
             const size = [target.clientWidth, target.clientHeight];
             this.renderer.setSize(size[0], size[1]);
+            this.camera.position.set(0, 0, 1);
         });
 
         ob.observe(this.anchor);
@@ -133,32 +129,6 @@ export class GraphRenderer {
             GraphRenderer.defaults.nearPlane,
             GraphRenderer.defaults.farPlane + 1
         );
-    }
-
-    protected createZoom(): d3zoom.ZoomBehavior<Element, unknown> {
-        return d3zoom.zoom()
-            .scaleExtent([
-                this.getScaleFromZ(GraphRenderer.defaults.farPlane), 
-                this.getScaleFromZ(GraphRenderer.defaults.nearPlane)
-            ])
-            .on("zoom", ev => {
-                const transform = ev.transform as d3zoom.ZoomTransform;
-                this.zoomHandler(transform);
-            });
-    }
-
-    protected configureZoom(): void {
-        // This is fucked, take another look
-        // const selection = d3sel.select(this.renderer.domElement) as unknown as d3sel.Selection<Element, unknown, any, any>;
-        // this.zoom(selection);
-
-        // this is also super fucked
-        const selection = d3sel.select(this.renderer.domElement);
-        selection.call(this.zoom as any);
-        const initScale = this.getScaleFromZ(GraphRenderer.defaults.farPlane);
-        const initTransform = d3zoom.zoomIdentity.translate(this.width / 2, this.height / 2).scale(initScale);    
-        this.zoom.transform(selection as any, initTransform);
-        this.camera.position.set(0, 0, GraphRenderer.defaults.farPlane);
     }
 
     protected initializeRenderer(): void {
@@ -178,15 +148,6 @@ export class GraphRenderer {
     protected getZFromScale(scale: number): number {
         const halfFovRadians =  GraphRenderer.radians(this.fov / 2);
         return ((this.height / scale) / (2 * Math.tan(halfFovRadians)));
-    }
-
-    protected zoomHandler = (transform: d3zoom.ZoomTransform): void => {
-        console.log("handling zoom");
-        let scale = transform.k;
-        let x = -(transform.x - this.width/2) / scale;
-        let y = (transform.y - this.height/2) / scale;
-        let z = this.getZFromScale(scale);
-        this.camera.position.set(x, y, z);
     }
 
     protected static radians(degrees: number): number {
