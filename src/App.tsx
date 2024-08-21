@@ -13,7 +13,7 @@ const Body = styled.div`
 function App() {
     return(
         <Body>
-            <GraphRenderTest />
+            <GraphVisualizer />
         </Body>
     )
 }
