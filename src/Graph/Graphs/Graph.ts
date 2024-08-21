@@ -1,4 +1,4 @@
-interface Node {
+export interface Node {
     data: {
         id: string;
     };
@@ -8,7 +8,7 @@ interface Node {
     };
 }
 
-interface Edge {
+export interface Edge {
     data: {
         id: string;
         source: string;

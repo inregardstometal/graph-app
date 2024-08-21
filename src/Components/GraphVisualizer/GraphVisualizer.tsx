@@ -3,7 +3,6 @@ import styled from '@emotion/styled';
 import { usePrevious } from 'Utils';
 import { ChangeEvent, useEffect, useState, useRef } from 'react'; 
 import { GraphGen, _GraphLayout, SerialGraph } from 'Graph';
-import { Vec2D } from 'Utils';
 
 interface Props {
 
@@ -15,7 +14,23 @@ const Graph = styled.div`
     border-radius: 10px;
     border: 2px solid white;
     overflow: hidden;
+    position: relative;
 `;
+
+const InfoOverlay = styled.div`
+    width: 20%;
+    max-width: 300px;
+    background-color: transparent;
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    color: white;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: flex-end;
+    z-index: 100;
+`
 
 const ButtonRow = styled.div`
     background: white;
@@ -80,6 +95,19 @@ const circleLayout: cytoscape.LayoutOptions = {
     name: 'circle'
 }
 
+const produceInfo = (info: any): HTMLElement[] => {
+    if(!info || typeof info !== 'object' || Object.keys(info).length === 0) {
+        const output = document.createElement('label');
+        return [output];
+    } else {
+        return Object.keys(info).map(key => {
+            const label = document.createElement('label');
+            label.innerText = `${key}: ${info[key]}\n`
+            return label;
+        });
+    }
+}
+
 const stylesheet: cytoscape.Stylesheet[] = [
     {
         selector: 'node',
@@ -132,7 +160,7 @@ const GraphVisualizer = ({}: Props) => {
     useEffect(() => {
         if (!cy && el) {
             let graph;
-
+            iteration.current = 0;
             if (interCode) {
                 clearTimeout(interCode);
                 setInterCode(null);
@@ -220,8 +248,13 @@ const GraphVisualizer = ({}: Props) => {
         }
     }
 
+    const tickRef = useRef<HTMLLabelElement | null>(null);
+
+
     const tick = () => {
         if (cy && layout) {
+
+
             const map = layout.tickForceDirected();
 
             cy.nodes().positions(ele => {
@@ -234,6 +267,13 @@ const GraphVisualizer = ({}: Props) => {
                 }
             });
             iteration.current++;
+            if (tickRef.current) {
+                tickRef.current.innerText = iteration.current.toFixed(0);
+            }
+            let metricString = '';
+            const metrics = layout.reportMetrics();
+            Object.keys(metrics).forEach(key => metricString += `${key}: ${metrics[key]}\n`);
+            console.log(metricString);
         }
     }
 
@@ -246,6 +286,8 @@ const GraphVisualizer = ({}: Props) => {
 
                 return r ? {x: r.x, y: r.y} : ele.position();
             });
+
+            cy.fit();
         }
     }
 
@@ -298,7 +340,7 @@ const GraphVisualizer = ({}: Props) => {
                     <>
                         <HotBoibutton onClick={tick}>tick</HotBoibutton>
                         {interCode === null ? <HotBoibutton onClick={autoTick}>Auto Tick</HotBoibutton> : <HotBoibutton onClick={endTick}>Stop Ticking</HotBoibutton>}
-                        <label>Tick: {iteration.current}</label>
+                        <label ref={tickRef}>Tick: {iteration.current}</label>
                         <HotBoibutton onClick={kick}>kick</HotBoibutton>
                     </>
                 }
@@ -309,7 +351,6 @@ const GraphVisualizer = ({}: Props) => {
                 <HotBoiInput placeholder="edge length" type="number" value={edgeLength} onChange={edgeLengthChange} title="Initial edge length of the graph" id="edgeLength"/>
             </ButtonRow>
             <Graph id='graph-target'>
-
             </Graph>
         </>
     )

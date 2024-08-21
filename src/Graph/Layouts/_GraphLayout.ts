@@ -39,6 +39,8 @@ export class _GraphLayout {
     */
     private static readonly MAX_STALE_ITER: number = _GraphLayout.MAX_COOLING_EXP + 5;
     private static readonly STALE_THRESHOLD: number = 0.02;
+    private static readonly STALE_KICK_ITER: number = 5;
+    private static readonly STALE_KICK_THRESHOLD: number = 0.05;
 
     /* 
         LIMITING
@@ -55,10 +57,13 @@ export class _GraphLayout {
     private E = 0;
     // Last run's energy
     private E_0 = this.E;
+    private MIN_ENERGY: number = Number.MAX_VALUE;
     // Position update scaling factor
     private STEP_SIZE = _GraphLayout.INIT_STEP_SIZE;
     private PROGRESS = 0;
     private STALE = 0;
+    private KICKS = 0;
+    private TICKS = 0;
     
 
     constructor(graph: Graph){
@@ -84,6 +89,7 @@ export class _GraphLayout {
                 break;
             }
             this.updateEnergy();
+            this.kick();
             this.updatePositions();
         }
 
@@ -99,8 +105,10 @@ export class _GraphLayout {
             this.computeAllFRGForces();
         }
         this.adaptiveCool();
+        this.shouldEndLayout(this.TICKS);
         this.updateEnergy();
         this.updatePositions();
+        this.TICKS++;
         return this._graph.nodeMap;
     }
 
@@ -133,6 +141,18 @@ export class _GraphLayout {
         console.log("ΔE: " + (this.E - this.E_0));
         console.log("Step Size: " + this.STEP_SIZE);
         console.log("Is stale: " + (this.STALE !== 0) + "\n");
+    }
+
+    public reportMetrics() {
+        const report = {
+            energy: this.E_0,
+            minEnergy: this.MIN_ENERGY,
+            stepSize: this.STEP_SIZE,
+            kicks: this.KICKS,
+            stale: this.STALE
+        }
+
+        return report;
     }
 
     /**
@@ -206,6 +226,8 @@ export class _GraphLayout {
      * @param size optional magnitude of kick
      */
     public randomKick(size?: number): void {
+        this.KICKS++;
+        this.STEP_SIZE = _GraphLayout.INIT_STEP_SIZE;
         let magnitude = size ?? (_GraphLayout.SPACING * 5);
 
         for(let node of this._graph.nodeMap.values()) {
@@ -233,8 +255,23 @@ export class _GraphLayout {
     }
 
     private updateEnergy(): void {
+        if (this.E < this.MIN_ENERGY) {
+            this.MIN_ENERGY = this.E;
+        }
         this.E_0 = this.E;
         this.E = 0;
+    }
+
+    private kick(): void {
+        if (this.STALE >= _GraphLayout.STALE_KICK_ITER) {
+            if (this.MIN_ENERGY !== 0) {
+                const diff = this.E_0 - this.MIN_ENERGY;
+                const factor = Math.abs((diff)/this.MIN_ENERGY);
+                if (factor >= _GraphLayout.STALE_KICK_THRESHOLD) {
+                    this.randomKick();
+                }
+            }
+        }
     }
 
     /**

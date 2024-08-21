@@ -1,4 +1,4 @@
-import { Graph } from '../Graphs';
+import { Graph, Node as GraphNode } from '../Graphs';
 interface GenerationOptions {
 
 }
@@ -176,7 +176,7 @@ export class GraphGen {
             // Get the number of degrees between each of the petal nodes.
             // This will be 360 degrees divided by the number of nodes-1.
             const radsBetweenNodes = (2 * Math.PI) / (nodes - 1);
-            let lastNode = null;
+            let lastNode: GraphNode | null = null;
             for (let i = 1; i <= nodes; i++) {
                 const x = edgeLength * Math.cos(radsBetweenNodes * i);
                 const y = edgeLength * Math.sin(radsBetweenNodes * i);
