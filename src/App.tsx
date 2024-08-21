@@ -1,5 +1,6 @@
 import styled from '@emotion/styled';
 import GraphVisualizer from './Components/GraphVisualizer/GraphVisualizer'
+import { GraphRenderTest } from 'Components/GraphVisualizer/GraphRenderTest';
 
 const Body = styled.div`
     width: 100%;
@@ -12,7 +13,7 @@ const Body = styled.div`
 function App() {
     return(
         <Body>
-            <GraphVisualizer/>
+            <GraphRenderTest />
         </Body>
     )
 }
